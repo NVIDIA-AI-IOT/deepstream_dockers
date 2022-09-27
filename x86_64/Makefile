@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: MIT
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
+
+
+img_type = base test5 runtime devel its trtis triton-devel ds-custom
+prefix = deepstream_x86
+platform = x86_64
+platform_build_arg = --build-arg TENSORRT_VERSION="8.4.1-1+cuda11.6"
+platform_build_arg += --build-arg CUDNN_VERSION="8.4.1.50-1+cuda11.6"
+platform_build_arg += --build-arg CUDA_VERSION="11.7.1"
+platform_build_arg += --build-arg DS_CUSTOM_BASE_IMAGE=${ds_custom_base_image}
+
+DOCKER=docker
+base test5 its runtime: ubuntu_base_runtime
+ds-custom: ds_base_custom
+devel : ubuntu_base_devel
+trtis : trtserver_base_runtime
+triton-devel: trtserver_base_devel
+base test5 its runtime: base_image?= $(registry)/$(prefix)-ubuntu_base_runtime:$(image_tag)
+devel: base_image ?= $(registry)/$(prefix)-ubuntu_base_devel:$(image_tag)
+trtis: base_image ?= $(registry)/$(prefix)-trtserver_base_runtime:$(image_tag)
+triton-devel: base_image ?= $(registry)/$(prefix)-trtserver_base_devel:$(image_tag)
+ds-custom: base_image ?= $(registry)/$(prefix)-ds_base_custom:$(image_tag)
+
+its ds-custom: target_opts += -e EXTRA_CONFIGS_DIR=$(ds_extra_configs_dir) \
+	 -e EXTRA_MODEL_DIR=$(ds_extra_model_dir)
+
+trtis triton-devel: target_opts += --gpus all
+
+include ../common/Makefile
+
+ds_pkg="deepstream_sdk_v$(version)_x86_64.tbz2"
+ds_pkg_dir="deepstream_sdk_v$(version)_x86_64"
+platform_run_arg += -v $(top)/$(platform)/$(ds_pkg):/root/tmp/$(ds_pkg):ro
