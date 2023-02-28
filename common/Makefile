@@ -20,7 +20,6 @@
 # DEALINGS IN THE SOFTWARE.
 
 
-
 top=$(abspath $(lastword $(MAKEFILE_LIST))/../..)
 $(info $(top))
 include $(top)/common/version

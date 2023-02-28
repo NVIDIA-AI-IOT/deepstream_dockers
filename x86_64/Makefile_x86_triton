@@ -23,10 +23,10 @@
 img_type = base test5 runtime devel its trtis triton-devel
 prefix = deepstream_x86
 platform = x86_64
-ds_dir = /opt/nvidia/deepstream/deepstream-6.1
-platform_build_arg = --build-arg TENSORRT_VERSION="8.4.1-1+cuda11.4"
-platform_build_arg += --build-arg CUDNN_VERSION="8.4.1.50-1+cuda11.6"
-platform_build_arg += --build-arg CUDA_VERSION="11.7.1"
+ds_dir = /opt/nvidia/deepstream/deepstream-6.2
+platform_build_arg = --build-arg TENSORRT_VERSION="8.5.2-1+cuda11.8"
+platform_build_arg += --build-arg CUDNN_VERSION="8.6.0.163-1+cuda11.8"
+platform_build_arg += --build-arg CUDA_VERSION="11.8.0"
 platform_build_arg += --build-arg DS_DIR=$(ds_dir)
 
 DOCKER=docker

@@ -19,6 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+
 img_type = base test5 runtime triton
 prefix = deepstream_jetson
 L4T_VERSION=r8.4.1.5
