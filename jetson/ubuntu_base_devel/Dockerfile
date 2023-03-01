@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,12 +21,13 @@
 
 
 ARG L4T_VERSION
+FROM nvcr.io/nvidia/l4t-tensorrt:r8.5.2.2-devel
 
-FROM nvcr.io/nvidia/l4t-tensorrt:r8.4.1.5-devel
-
+# libgtk-3-dev libgdk3.0-cil-dev libglib2.0   (--no-install-recommends \
 
 # IP requirement for removal (move to the end after everything has been installed)
 # remove gstreamer1.0-libav (it is also in the base docker image)
+# RUN DEBIAN_FRONTEND=noninteractive apt-get purge -y gstreamer1.0-libav
 
 # GStreamer + deepstream devel dependencies
 RUN apt-get update && \
@@ -48,7 +49,6 @@ RUN apt-get update && \
 	libgstreamer-plugins-base1.0-dev \
 	libglew-dev \
 	libssl-dev \
-	libopencv-dev \
 	freeglut3-dev \
 	libjpeg-dev \
 	libjson-glib-dev \
@@ -63,6 +63,7 @@ RUN apt-get update && \
 	libx11-dev \
 	git \
 	wget \
+        unzip \
 	python3-distutils \
 	python3-apt \
 	python \
@@ -71,32 +72,45 @@ RUN apt-get update && \
 	tzdata \
 	libcurl4 libcurl4-openssl-dev ca-certificates \
 	vim g++  \
+        libjsoncpp-dev \
 	gstreamer1.0-rtsp && \
 	rm -rf /var/lib/apt/lists/* && \
 	apt autoremove
 
 
-# Install nvidia-cudnn8-dev for CuDNN developer packages
-# Use nvidia-cudnn8 if need CuDNN runtime only
-#
-RUN apt-get update && apt-get install -y --no-install-recommends --allow-change-held-packages \
-    libcudnn8 \
-    libcudnn8-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+RUN mkdir -p /opt/tritonclient/ && \
+    mkdir -p /tmp/temp_triton99 && \
+    mkdir -p /opt/proto && \
+    mkdir -p /tmp/temp_proto99 && \
+    mkdir -p /opt/half && \
+    mkdir -p /tmp/half99 && \
+    cd /tmp/temp_triton99 && \
+    wget  https://github.com/triton-inference-server/server/releases/download/v2.12.0/tritonserver2.12.0-jetpack4.6.tgz && \
+    tar xzf tritonserver2.12.0-jetpack4.6.tgz -C /opt/tritonclient/ --strip-components=2 ./clients/lib/ ./clients/include && \
+    cd /tmp/temp_proto99 && \
+    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.8.0/protoc-3.8.0-linux-aarch_64.zip && \
+    /usr/bin/unzip /tmp/temp_proto99/protoc-3.8.0-linux-aarch_64.zip -d /opt/proto && \
+    cd /tmp/half99 && \
+    wget https://sourceforge.net/projects/half/files/half/2.1.0/half-2.1.0.zip && \
+    /usr/bin/unzip /tmp/half99/half-2.1.0.zip -d /opt/half && \
+    cd / && \
+    rm -rf /tmp/temp_triton99 && \
+    rm -rf /tmp/temp_proto99 && \
+    rm -rf /tmp/half99
 
 
-#work-around for vpi tests
+# work-around for vpi tests
 RUN mkdir -p /lib/firmware
 
 #
 # Install nvidia-vpi-dev for VPI developer packages
 # Use nvidia-vpi if need VPI runtime only
 #
-RUN apt-get update && apt-get install -y --no-install-recommends \
+ RUN apt-get update && apt-get install -y --no-install-recommends \
     nvidia-vpi-dev \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
+
 
 # IP requirement for removal
 RUN rm -f /usr/lib/aarch64-linux-gnu/libavresample* /usr/lib/aarch64-linux-gnu/libavutil* \
@@ -104,12 +118,17 @@ RUN rm -f /usr/lib/aarch64-linux-gnu/libavresample* /usr/lib/aarch64-linux-gnu/l
     /usr/lib/aarch64-linux-gnu/libavfilter*
 RUN rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstaudioparsers.so
 RUN rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstfaad.so
-RUN rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvoaacenc.so
+RUN rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvoaacenc.so \
+    /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstx264.so /usr/lib/aarch64-linux-gnu/libx264.so.155 \
+    /usr/lib/aarch64-linux-gnu/libmpeg2.so* /usr/lib/aarch64-linux-gnu/libmpeg2convert.so* /usr/lib/aarch64-linux-gnu/libmpeg2encpp-2.1.so* 
+RUN rm -f /usr/lib/aarch64-linux-gnu/libmpg123.so* /usr/lib/aarch64-linux-gnu/libvpx.so* /usr/lib/aarch64-linux-gnu/libx265.so.179 \
+    /usr/lib/aarch64-linux-gnu/libde265.so* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstx265.so* \
+    /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstde265.so* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvpx.so 
+
 
 # IP requirement for removal (move to the end after everything has been installed)
 # remove gstreamer1.0-libav (it is also in the base docker image)
 RUN DEBIAN_FRONTEND=noninteractive apt-get purge -y gstreamer1.0-libav
-
 
 
 CMD ["/bin/bash"]
@@ -117,6 +136,10 @@ WORKDIR /opt/nvidia/deepstream/deepstream
 
 # User additional install script (moved to the correct location with the license file)
 ADD user_additional_install_devel.sh /opt/
+ADD user_deepstream_python_apps_install.sh /opt/
+
+# workaround for TRT missing symlinks
+RUN ln -s /usr/src/tensorrt/bin/trtexec /usr/bin/trtexec
 
 
 RUN ldconfig
@@ -125,7 +148,7 @@ ENV LD_LIBRARY_PATH /usr/local/cuda-11.4/lib64
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES all
 
-ENV LD_PRELOAD /usr/lib/aarch64-linux-gnu/libgomp.so.1:$LD_PRELOAD
+ENV LD_PRELOAD /usr/lib/aarch64-linux-gnu/libgomp.so.1:/lib/aarch64-linux-gnu/libGLdispatch.so:$LD_PRELOAD
 
 # Clean up link to internal repo
 RUN sed -i '$d' /etc/apt/sources.list

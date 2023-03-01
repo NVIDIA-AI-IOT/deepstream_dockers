@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,9 +23,9 @@
 img_type = base test5 runtime devel its trtis triton-devel ds-custom
 prefix = deepstream_x86
 platform = x86_64
-platform_build_arg = --build-arg TENSORRT_VERSION="8.4.1-1+cuda11.6"
-platform_build_arg += --build-arg CUDNN_VERSION="8.4.1.50-1+cuda11.6"
-platform_build_arg += --build-arg CUDA_VERSION="11.7.1"
+platform_build_arg = --build-arg TENSORRT_VERSION="8.5.2-1+cuda11.8"
+platform_build_arg += --build-arg CUDNN_VERSION="8.6.0.163-1+cuda11.8"
+platform_build_arg += --build-arg CUDA_VERSION="11.8.0"
 platform_build_arg += --build-arg DS_CUSTOM_BASE_IMAGE=${ds_custom_base_image}
 
 DOCKER=docker
