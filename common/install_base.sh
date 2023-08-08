@@ -21,6 +21,7 @@
 # DEALINGS IN THE SOFTWARE.
 
 
+
 utils_install_librdkafka_from_source()
 {
     # @{ librdkafka from source; Bug 200630652
@@ -37,25 +38,43 @@ utils_install_librdkafka_from_source()
     rm -rf librdkafka
     # @} librdkafka from source; Bug 200630652
 }
+
 utils_install_libhiredis_from_source()
 {
-    echo "Installing Dependencies: "
+    echo "Installing Dependencies for libhiredis: "
     apt-get install -y libglib2.0 libglib2.0-dev make libssl-dev
 
     echo "Installing libhiredis: "
     cd "/root/tmp"
     git clone https://github.com/redis/hiredis.git
     cd hiredis
-    git reset --hard d5b4c69b7113213c1da3a0ccbfd1ee1b40443c7a
+    git checkout tags/v1.0.2
     make USE_SSL=1
     cp libhiredis* /opt/nvidia/deepstream/deepstream/lib/
-    ln -sf /opt/nvidia/deepstream/deepstream/lib/libhiredis.so /opt/nvidia/deepstream/deepstream/lib/libhiredis.so.1.0.1-dev
-    ln -sf /opt/nvidia/deepstream/deepstream/lib/libhiredis_ssl.so /opt/nvidia/deepstream/deepstream/lib/libhiredis.so.1.0.1-dev-ssl
+    ln -sf /opt/nvidia/deepstream/deepstream/lib/libhiredis.so /opt/nvidia/deepstream/deepstream/lib/libhiredis.so.1.0.0
     ldconfig
     cd "/root/tmp"
     apt-get purge -y libssl-dev
     echo "finished installing libhiredis"
 
+}
+
+utils_install_libmosquitto_from_source()
+{
+   echo "Installing Dependencies for libmosquitto: "
+    apt-get install -y libssl-dev
+
+    echo "Installing libmosquitto: "
+    cd "/root/tmp"
+    wget https://mosquitto.org/files/source/mosquitto-1.6.15.tar.gz
+    tar -xvf mosquitto-1.6.15.tar.gz
+    cd mosquitto-1.6.15
+    make
+    make install
+    cd "/root/tmp"
+    apt-get purge -y libssl-dev
+    rm -rf mosquitto-1.6.15
+    echo "finished installing libmosquitto"
 }
 
 
@@ -77,9 +96,11 @@ popd
 
 utils_install_librdkafka_from_source
 
-
 /opt/nvidia/deepstream/deepstream/install.sh
+
 utils_install_libhiredis_from_source
+
+utils_install_libmosquitto_from_source
 
 echo  "${PLATFORM}"
 

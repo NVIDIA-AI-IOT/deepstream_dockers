@@ -19,10 +19,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
 ARG CUDA_VERSION
 
-FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}-runtime-ubuntu20.04
+FROM nvcr.io/nvidia/cuda:12.1.1-runtime-ubuntu20.04
 
 ARG TENSORRT_VERSION
 ARG CUDNN_VERSION
@@ -71,74 +70,89 @@ RUN apt-get update && \
 	libjson-glib-1.0-0 \
 	gstreamer1.0-rtsp \
 	rsyslog \
+        openssl \
 	git \
-	python \
+        openssl \
+        libssl1.1 \
+	python3 \
         libjsoncpp-dev \
         gcc \
+        libxml2 \
 	tzdata && \
 	rm -rf /var/lib/apt/lists/* && \
 	apt autoremove
 
 
+
+# Add TensorRT repo
+# NOTE THis should already be downloaded into x86_64 directory
+ADD  nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb /tmp
+
 # Add TRT repo
  RUN mkdir -p /tmp/temp_trt && \
        cd /tmp/temp_trt && \
-       wget  https://urm.nvidia.com/artifactory/sw-ds-generic/depend/trt/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8_1.0-1_amd64.deb --no-check-certificate --no-verbose && \
+       mv /tmp/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb  /tmp/temp_trt/ && \
        ls -l /tmp/temp_trt/ && \
-       dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8_1.0-1_amd64.deb && \
-       cp /var/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8/nv-tensorrt-local-9A139056-keyring.gpg /usr/share/keyrings/ && \
+       dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb && \
+       cp /var/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8/nv-tensorrt-local-3EFA7C6A-keyring.gpg /usr/share/keyrings/ && \
        apt-get update && \
        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       libnvinfer8=8.5.2-1+cuda11.8 \
-       libnvinfer-plugin8=8.5.2-1+cuda11.8 \
-       libnvparsers8=8.5.2-1+cuda11.8 \
-       libnvonnxparsers8=8.5.2-1+cuda11.8 \
-       libnvinfer-bin=8.5.2-1+cuda11.8 \
-       libnvinfer-dev=8.5.2-1+cuda11.8 \
-       libnvinfer-plugin-dev=8.5.2-1+cuda11.8 \
-       libnvparsers-dev=8.5.2-1+cuda11.8 \
-       libnvonnxparsers-dev=8.5.2-1+cuda11.8 \
-       libnvinfer-samples=8.5.2-1+cuda11.8 \
-       python3-libnvinfer=8.5.2-1+cuda11.8 \
-       python3-libnvinfer-dev=8.5.2-1+cuda11.8 \
-       uff-converter-tf=8.5.2-1+cuda11.8 \
-       graphsurgeon-tf=8.5.2-1+cuda11.8 \
-       libcudnn8=8.7.0.84-1+cuda11.8 \
-       libcudnn8-dev=8.7.0.84-1+cuda11.8 && \
+       libnvinfer8=8.5.3-1+cuda11.8 \
+       libnvinfer-plugin8=8.5.3-1+cuda11.8 \
+       libnvparsers8=8.5.3-1+cuda11.8 \
+       libnvonnxparsers8=8.5.3-1+cuda11.8 \
+       libnvinfer-bin=8.5.3-1+cuda11.8 \
+       libnvinfer-dev=8.5.3-1+cuda11.8 \
+       libnvinfer-plugin-dev=8.5.3-1+cuda11.8 \
+       libnvparsers-dev=8.5.3-1+cuda11.8 \
+       libnvonnxparsers-dev=8.5.3-1+cuda11.8 \
+       libnvinfer-samples=8.5.3-1+cuda11.8 \
+       python3-libnvinfer=8.5.3-1+cuda11.8 \
+       python3-libnvinfer-dev=8.5.3-1+cuda11.8 \
+       uff-converter-tf=8.5.3-1+cuda11.8 \
+       graphsurgeon-tf=8.5.3-1+cuda11.8 \
+       libcudnn8=8.8.1.3-1+cuda12.0 \
+       libcudnn8-dev=8.8.1.3-1+cuda12.0 && \
        cd /tmp && \
+       dpkg --purge nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8 1.0-1 && \
        rm -rf temp_trt && \
        rm -rf /var/lib/apt/lists/*
 
-# Add TRT repo using a hosted file method.
+
+
 # install TensorRT repo from a hosted file on a server
-# add a URL to  server where  TRT is hosted
-# Commented out the  Add version before uncommenting this version.
+
+# Add TRT repo
 # RUN mkdir -p /tmp/temp_trt && \
 #       cd /tmp/temp_trt && \
-#       wget  https://<add url>/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8_1.0-1_amd64.deb && \
-#       dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8_1.0-1_amd64.deb && \
-#       cp /var/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8/nv-tensorrt-local-9A139056-keyring.gpg /usr/share/keyrings/ && \
+#       wget https://<externally hosted> && \
+#       ls -l /tmp/temp_trt/ && \
+#       dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb && \
+#       cp /var/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8/nv-tensorrt-local-3EFA7C6A-keyring.gpg /usr/share/keyrings/ && \
 #       apt-get update && \
 #       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-#       libnvinfer8=8.5.2-1+cuda11.8 \
-#       libnvinfer-plugin8=8.5.2-1+cuda11.8 \
-#       libnvparsers8=8.5.2-1+cuda11.8 \
-#       libnvonnxparsers8=8.5.2-1+cuda11.8 \
-#       libnvinfer-bin=8.5.2-1+cuda11.8 \
-#       libnvinfer-dev=8.5.2-1+cuda11.8 \
-#       libnvinfer-plugin-dev=8.5.2-1+cuda11.8 \
-#       libnvparsers-dev=8.5.2-1+cuda11.8 \
-#       libnvonnxparsers-dev=8.5.2-1+cuda11.8 \
-#       libnvinfer-samples=8.5.2-1+cuda11.8 \
-#       python3-libnvinfer=8.5.2-1+cuda11.8 \
-#       python3-libnvinfer-dev=8.5.2-1+cuda11.8 \
-#       uff-converter-tf=8.5.2-1+cuda11.8 \
-#       graphsurgeon-tf=8.5.2-1+cuda11.8 \
-#       libcudnn8=8.7.0.84-1+cuda11.8 \
-#       libcudnn8-dev=8.7.0.84-1+cuda11.8 && \
+#       libnvinfer8=8.5.3-1+cuda11.8 \
+#       libnvinfer-plugin8=8.5.3-1+cuda11.8 \
+#       libnvparsers8=8.5.3-1+cuda11.8 \
+#       libnvonnxparsers8=8.5.3-1+cuda11.8 \
+#       libnvinfer-bin=8.5.3-1+cuda11.8 \
+#       libnvinfer-dev=8.5.3-1+cuda11.8 \
+#       libnvinfer-plugin-dev=8.5.3-1+cuda11.8 \
+#       libnvparsers-dev=8.5.3-1+cuda11.8 \
+#       libnvonnxparsers-dev=8.5.3-1+cuda11.8 \
+#       libnvinfer-samples=8.5.3-1+cuda11.8 \
+#       python3-libnvinfer=8.5.3-1+cuda11.8 \
+#       python3-libnvinfer-dev=8.5.3-1+cuda11.8 \
+#       uff-converter-tf=8.5.3-1+cuda11.8 \
+#       graphsurgeon-tf=8.5.3-1+cuda11.8 \
+#       libcudnn8=8.8.1.3-1+cuda12.0 \
+#       libcudnn8-dev=8.8.1.3-1+cuda12.0 && \
 #       cd /tmp && \
+#       dpkg --purge nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8 1.0-1 && \
 #       rm -rf temp_trt && \
 #       rm -rf /var/lib/apt/lists/*
+
+
 
 
 
@@ -154,13 +168,15 @@ WORKDIR /opt/nvidia/deepstream/deepstream
 ADD user_additional_install_runtime.sh /opt/
 
 RUN ln -s /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1 /usr/lib/x86_64-linux-gnu/libnvcuvid.so && \
-    ln -s /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so 
+    ln -s /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so && \
+    ln -s /usr/local/cuda/lib64/libcudart.so.12.1.105 /usr/local/cuda/lib64/libcudart.so
+
 
 ADD deps/gRPC_installation.sh /root/
 RUN /root/gRPC_installation.sh
 
 # added wget so gRPC script could install
-RUN apt-get remove --purge -y wget
+# RUN apt-get remove --purge -y wget
 RUN rm /root/gRPC_installation.sh && \
     cd /tmp && \
     rm -rf temp_cuda99
