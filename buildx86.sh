@@ -21,7 +21,7 @@
 
 # Example script to build x86 docker (currently building a x86 triton docker).
 
-sudo image_url=deepstream:6.2.0-triton-local \
-     ds_pkg=deepstream_sdk_v6.2.0_x86_64.tbz2 \
-     ds_pkg_dir=deepstream_sdk_v6.2.0_x86_64/ \
+sudo image_url=deepstream:6.3.0-triton-local \
+     ds_pkg=deepstream_sdk_v6.3.0_x86_64.tbz2 \
+     ds_pkg_dir=deepstream_sdk_v6.3.0_x86_64/ \
      base_image=dgpu-any-custom-base-image make -f Makefile_x86_triton triton-devel -C x86_64/

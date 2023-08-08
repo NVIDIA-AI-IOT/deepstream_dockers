@@ -35,6 +35,7 @@ utils_install_librdkafka_from_source()
     rm -rf librdkafka
     # @} librdkafka from source; Bug 200630652
 }
+
 utils_install_libhiredis_from_source()
 {
     echo "Installing Dependencies: "
@@ -44,17 +45,32 @@ utils_install_libhiredis_from_source()
     cd "/root/tmp"
     git clone https://github.com/redis/hiredis.git
     cd hiredis
-    git reset --hard d5b4c69b7113213c1da3a0ccbfd1ee1b40443c7a
+    git checkout tags/v1.0.2
     make USE_SSL=1
     cp libhiredis* /opt/nvidia/deepstream/deepstream/lib/
-    ln -sf /opt/nvidia/deepstream/deepstream/lib/libhiredis.so /opt/nvidia/deepstream/deepstream/lib/libhiredis.so.1.0.1-dev
-    ln -sf /opt/nvidia/deepstream/deepstream/lib/libhiredis_ssl.so /opt/nvidia/deepstream/deepstream/lib/libhiredis.so.1.0.1-dev-ssl
+    ln -sf /opt/nvidia/deepstream/deepstream/lib/libhiredis.so /opt/nvidia/deepstream/deepstream/lib/libhiredis.so.1.0.0
     ldconfig
     cd "/root/tmp"
 
     echo "finished installing libhiredis"
 
 }
+
+utils_install_libmosquitto_from_source()
+{
+    echo "Installing libmosquitto: "
+    cd "/root/tmp"
+    wget https://mosquitto.org/files/source/mosquitto-1.6.15.tar.gz
+    tar -xvf mosquitto-1.6.15.tar.gz
+    cd mosquitto-1.6.15
+    make
+    make install
+    cd "/root/tmp"
+    rm -rf mosquitto-1.6.15
+    echo "finished installing libmosquitto"
+}
+
+
 
 #Throws an error and causes a build failure for all errors in the script
 #Custom Message describes where the error was thrown
@@ -69,10 +85,10 @@ utils_install_librdkafka_from_source
 
 tar -xvf "${DS_REL_PKG}" -C /
 /opt/nvidia/deepstream/deepstream/install.sh
-#mv /root/libiothub_client.so /opt/nvidia/deepstream/deepstream/lib/
-#mv /root/docker_python_setup.sh /opt/nvidia/deepstream/deepstream/
 
 utils_install_libhiredis_from_source
+
+utils_install_libmosquitto_from_source
 
 cp /root/tmp/LicenseAgreementContainer.pdf /opt/nvidia/deepstream/deepstream/
 

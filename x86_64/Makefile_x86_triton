@@ -19,14 +19,13 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
-img_type = base test5 runtime devel its trtis triton-devel
+img_type = base test5 runtime devel its trtis triton-devel triton-devel-gc
 prefix = deepstream_x86
 platform = x86_64
-ds_dir = /opt/nvidia/deepstream/deepstream-6.2
-platform_build_arg = --build-arg TENSORRT_VERSION="8.5.2-1+cuda11.8"
-platform_build_arg += --build-arg CUDNN_VERSION="8.6.0.163-1+cuda11.8"
-platform_build_arg += --build-arg CUDA_VERSION="11.8.0"
+ds_dir = /opt/nvidia/deepstream/deepstream-6.3
+platform_build_arg = --build-arg TENSORRT_VERSION="8.5.3-1+cuda11.8"
+platform_build_arg += --build-arg CUDNN_VERSION="8.8.1.3-1+cuda12.0"
+platform_build_arg += --build-arg CUDA_VERSION="12.1.0"
 platform_build_arg += --build-arg DS_DIR=$(ds_dir)
 
 DOCKER=docker
@@ -34,16 +33,20 @@ base test5 its runtime: ubuntu_base_runtime
 devel : ubuntu_base_devel
 trtis : trtserver_base_runtime
 triton-devel: trtserver_base_devel
+triton-devel-gc: trtserver_base_devel_gc
 base test5 its runtime: base_image?= $(registry)/$(prefix)-ubuntu_base_runtime:$(image_tag)
 devel: base_image ?= $(registry)/$(prefix)-ubuntu_base_devel:$(image_tag)
 trtis: base_image ?= $(registry)/$(prefix)-trtserver_base_runtime:$(image_tag)
 triton-devel: base_image ?= $(registry)/$(prefix)-trtserver_base_devel:$(image_tag)
+triton-devel-gc: base_image ?= $(registry)/$(prefix)-trtserver_base_devel_gc:$(image_tag)
+
+
 
 its: target_opts += -e EXTRA_CONFIGS_DIR=$(ds_extra_configs_dir) \
 	 -e EXTRA_MODEL_DIR=$(ds_extra_model_dir)
 
-trtis triton-devel: target_opts += --entrypoint bash
-trtis triton-devel: commit_opts += --change "ENTRYPOINT [\"$(ds_dir)/entrypoint.sh\"]"
+trtis triton-devel triton-devel-gc: target_opts += --entrypoint bash
+trtis triton-devel triton-devel-gc: commit_opts += --change "ENTRYPOINT [\"$(ds_dir)/entrypoint.sh\"]"
 
 include ../common/Makefile
 

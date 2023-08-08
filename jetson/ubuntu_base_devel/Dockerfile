@@ -21,9 +21,12 @@
 
 
 ARG L4T_VERSION
+
 FROM nvcr.io/nvidia/l4t-tensorrt:r8.5.2.2-devel
 
-# libgtk-3-dev libgdk3.0-cil-dev libglib2.0   (--no-install-recommends \
+ADD vpi-dev-2.3.9-aarch64-l4t.deb             /root
+ADD vpi-lib-2.3.9-aarch64-l4t.deb             /root
+
 
 # IP requirement for removal (move to the end after everything has been installed)
 # remove gstreamer1.0-libav (it is also in the base docker image)
@@ -64,9 +67,11 @@ RUN apt-get update && \
 	git \
 	wget \
         unzip \
+        openssl \
+        libssl1.1 \
 	python3-distutils \
 	python3-apt \
-	python \
+	python3 \
         libyaml-cpp-dev \
 	rsyslog \
 	tzdata \
@@ -78,6 +83,7 @@ RUN apt-get update && \
 	apt autoremove
 
 
+
 RUN mkdir -p /opt/tritonclient/ && \
     mkdir -p /tmp/temp_triton99 && \
     mkdir -p /opt/proto && \
@@ -85,11 +91,11 @@ RUN mkdir -p /opt/tritonclient/ && \
     mkdir -p /opt/half && \
     mkdir -p /tmp/half99 && \
     cd /tmp/temp_triton99 && \
-    wget  https://github.com/triton-inference-server/server/releases/download/v2.12.0/tritonserver2.12.0-jetpack4.6.tgz && \
-    tar xzf tritonserver2.12.0-jetpack4.6.tgz -C /opt/tritonclient/ --strip-components=2 ./clients/lib/ ./clients/include && \
+    wget https://github.com/triton-inference-server/server/releases/download/v2.31.0/tritonserver2.31.0-jetpack5.1.tgz && \
+    tar xzf tritonserver2.31.0-jetpack5.1.tgz -C /opt/tritonclient/ --strip-components=2 ./clients/lib/ ./clients/include && \
     cd /tmp/temp_proto99 && \
-    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.8.0/protoc-3.8.0-linux-aarch_64.zip && \
-    /usr/bin/unzip /tmp/temp_proto99/protoc-3.8.0-linux-aarch_64.zip -d /opt/proto && \
+    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.4/protoc-3.19.4-linux-aarch_64.zip && \
+    /usr/bin/unzip /tmp/temp_proto99/protoc-3.19.4-linux-aarch_64.zip -d /opt/proto && \
     cd /tmp/half99 && \
     wget https://sourceforge.net/projects/half/files/half/2.1.0/half-2.1.0.zip && \
     /usr/bin/unzip /tmp/half99/half-2.1.0.zip -d /opt/half && \
@@ -99,17 +105,18 @@ RUN mkdir -p /opt/tritonclient/ && \
     rm -rf /tmp/half99
 
 
-# work-around for vpi tests
+#work-around for vpi tests
 RUN mkdir -p /lib/firmware
 
-#
-# Install nvidia-vpi-dev for VPI developer packages
-# Use nvidia-vpi if need VPI runtime only
-#
- RUN apt-get update && apt-get install -y --no-install-recommends \
-    nvidia-vpi-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+
+RUN apt-get update && \
+       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       /root/vpi-dev-2.3.9-aarch64-l4t.deb \
+       /root/vpi-lib-2.3.9-aarch64-l4t.deb && \
+       rm -rf /var/lib/apt/lists/* && \
+       rm -f /root/vpi-dev-2.3.9-aarch64-l4t.deb /root/vpi-lib-2.3.9-aarch64-l4t.deb && \
+       apt autoremove
+
 
 
 # IP requirement for removal
@@ -141,7 +148,6 @@ ADD user_deepstream_python_apps_install.sh /opt/
 # workaround for TRT missing symlinks
 RUN ln -s /usr/src/tensorrt/bin/trtexec /usr/bin/trtexec
 
-
 RUN ldconfig
 
 ENV LD_LIBRARY_PATH /usr/local/cuda-11.4/lib64
@@ -150,7 +156,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES all
 
 ENV LD_PRELOAD /usr/lib/aarch64-linux-gnu/libgomp.so.1:/lib/aarch64-linux-gnu/libGLdispatch.so:$LD_PRELOAD
 
-# Clean up link to internal repo
+#Clean up link to internal repo
 RUN sed -i '$d' /etc/apt/sources.list
 
 RUN rm -f /etc/apt/sources.list.d/cuda.list

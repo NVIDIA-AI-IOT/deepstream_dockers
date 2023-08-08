@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,6 +19,7 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
+
 
 # User script to download and install PyDS from https://github.com/NVIDIA-AI-IOT/deepstream_python_apps
 # -v option can be used to specify which version of PyDS to download and install
@@ -56,7 +57,7 @@ echo "####################################"
 apt-get update
 apt-get install -y gstreamer1.0-libav
 apt-get install --reinstall -y gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly libavresample-dev libavresample4 libavutil-dev libavutil56 libavcodec-dev libavcodec58 libavformat-dev libavformat58 libavfilter7 libde265-dev libde265-0 libx264-155 libx265-179 libvpx6 libmpeg2encpp-2.1-0 libmpeg2-4 libmpg123-0
-apt install -y python3-gi python3-dev python3-gst-1.0 python-gi-dev git python-dev python3 python3-pip python3.8-dev cmake g++ build-essential libglib2.0-dev libglib2.0-dev-bin libgstreamer1.0-dev libtool m4 autoconf automake libgirepository1.0-dev libcairo2-dev
+apt install -y python3-gi python3-dev python3-gst-1.0 python-gi-dev git python3 python3-pip python3.8-dev cmake g++ build-essential libglib2.0-dev libglib2.0-dev-bin libgstreamer1.0-dev libtool m4 autoconf automake libgirepository1.0-dev libcairo2-dev
 cd /opt/nvidia/deepstream/deepstream/sources
 if [ -z "$remote_branch" ]
 then
@@ -90,7 +91,7 @@ then
     cd /opt/nvidia/deepstream/deepstream/sources/deepstream_python_apps/bindings
     rm -rf build && mkdir build && cd build
     cmake ..
-    make
+    make -j$(nproc)
     echo "###########################"
     echo "Installing built PyDS wheel"
     echo "###########################"

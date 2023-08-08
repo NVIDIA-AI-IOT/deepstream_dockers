@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-FROM nvcr.io/nvidia/tritonserver:22.09-py3
+FROM nvcr.io/nvidia/tritonserver:23.03-py3
 
 
 ARG TENSORRT_VERSION
@@ -32,12 +32,13 @@ ARG BOOST_VERSION=1.71.0
 RUN head -n -2 /etc/apt/sources.list > /tmp/tmp.txt && mv /tmp/tmp.txt /etc/apt/sources.list
 
 
+
 # install realsense sdk for 3d camera
 # instructions: https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE && \
         apt-get update && DEBIAN_FRONTEND=noninteractive  apt-get install -y software-properties-common && \
         add-apt-repository "deb https://librealsense.intel.com/Debian/apt-repo $(lsb_release -cs) main" -u &&  apt-get update && \
-        DEBIAN_FRONTEND=noninteractive         apt-get install -y \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y \
         librealsense2-dev librealsense2-utils && \
         rm -rf /var/lib/apt/lists/* && \
         apt autoremove
@@ -60,7 +61,8 @@ RUN apt-get update && \
         gstreamer1.0-x \
         libssl1.1 \
         libgstreamer1.0-0 \
-        libgstrtspserver-1.0-0         libjansson4 \
+        libgstrtspserver-1.0-0 \
+        libjansson4 \
         librabbitmq4 \
         libuuid1 \
         libcurl4 \
@@ -102,6 +104,7 @@ RUN apt-get update && \
         libxext-dev \
         libx11-dev \
         openssl \
+        libssl1.1 \
         linux-libc-dev \
         policykit-1 \
         git \
@@ -113,96 +116,53 @@ RUN apt-get update && \
         vim  \
         wget \
         unzip \
-        python-is-python3 \
+        libxml2 \
         && rm -rf /var/lib/apt/lists/* \
         ; apt autoremove
 
  RUN pip3 install --upgrade pip
 
-# Add TensorRT repo
-# NOTE THis should already be downloaded into x86_64 directory
-ADD nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8_1.0-1_amd64.deb /tmp
 
-# Add TRT repo
- RUN mkdir -p /tmp/temp_trt && \
-       cd /tmp/temp_trt && \
-       cp /tmp/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8_1.0-1_amd64.deb  /tmp/temp_trt && \
-       ls -l /tmp/temp_trt/ && \
-       dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8_1.0-1_amd64.deb && \
-       cp /var/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8/nv-tensorrt-local-9A139056-keyring.gpg /usr/share/keyrings/ && \
-       apt-get update && \
-       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       libnvinfer8=8.5.2-1+cuda11.8 \
-       libnvinfer-plugin8=8.5.2-1+cuda11.8 \
-       libnvparsers8=8.5.2-1+cuda11.8 \
-       libnvonnxparsers8=8.5.2-1+cuda11.8 \
-       libnvinfer-bin=8.5.2-1+cuda11.8 \
-       libnvinfer-dev=8.5.2-1+cuda11.8 \
-       libnvinfer-plugin-dev=8.5.2-1+cuda11.8 \
-       libnvparsers-dev=8.5.2-1+cuda11.8 \
-       libnvonnxparsers-dev=8.5.2-1+cuda11.8 \
-       libnvinfer-samples=8.5.2-1+cuda11.8 \
-       python3-libnvinfer=8.5.2-1+cuda11.8 \
-       python3-libnvinfer-dev=8.5.2-1+cuda11.8 \
-       uff-converter-tf=8.5.2-1+cuda11.8 \
-       graphsurgeon-tf=8.5.2-1+cuda11.8 \
-       libcudnn8=8.7.0.84-1+cuda11.8 \
-       libcudnn8-dev=8.7.0.84-1+cuda11.8 && \
-       cd /tmp && \
-       rm -rf temp_trt && \
-       rm -rf /var/lib/apt/lists/*
-
-# Add TRT repo using a hosted file method.
-# install TensorRT repo from a hosted file on a server
-# add a URL to  server where  TRT is hosted
-# Commented out the  Add version before uncommenting this version.
-# RUN mkdir -p /tmp/temp_trt && \
-#       cd /tmp/temp_trt && \
-#       wget  https://<add url>/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8_1.0-1_amd64.deb && \
-#       dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8_1.0-1_amd64.deb && \
-#       cp /var/nv-tensorrt-local-repo-ubuntu2004-8.5.2-cuda-11.8/nv-tensorrt-local-9A139056-keyring.gpg /usr/share/keyrings/ && \
-#       apt-get update && \
-#       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-#       libnvinfer8=8.5.2-1+cuda11.8 \
-#       libnvinfer-plugin8=8.5.2-1+cuda11.8 \
-#       libnvparsers8=8.5.2-1+cuda11.8 \
-#       libnvonnxparsers8=8.5.2-1+cuda11.8 \
-#       libnvinfer-bin=8.5.2-1+cuda11.8 \
-#       libnvinfer-dev=8.5.2-1+cuda11.8 \
-#       libnvinfer-plugin-dev=8.5.2-1+cuda11.8 \
-#       libnvparsers-dev=8.5.2-1+cuda11.8 \
-#       libnvonnxparsers-dev=8.5.2-1+cuda11.8 \
-#       libnvinfer-samples=8.5.2-1+cuda11.8 \
-#       python3-libnvinfer=8.5.2-1+cuda11.8 \
-#       python3-libnvinfer-dev=8.5.2-1+cuda11.8 \
-#       uff-converter-tf=8.5.2-1+cuda11.8 \
-#       graphsurgeon-tf=8.5.2-1+cuda11.8 \
-#       libcudnn8=8.7.0.84-1+cuda11.8 \
-#       libcudnn8-dev=8.7.0.84-1+cuda11.8 && \
-#       cd /tmp && \
-#       rm -rf temp_trt && \
-#       rm -rf /var/lib/apt/lists/*
+ RUN mkdir -p /tmp/temp_cuda99 && \
+        cd /tmp/temp_cuda99 && \
+        wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin -nv && \
+        mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
+        wget https://developer.download.nvidia.com/compute/cuda/12.1.1/local_installers/cuda-repo-ubuntu2004-12-1-local_12.1.1-530.30.02-1_amd64.deb && \
+        ls -l /tmp/temp_cuda99/ && \
+        dpkg -i /tmp/temp_cuda99/cuda-repo-ubuntu2004-12-1-local_12.1.1-530.30.02-1_amd64.deb && \
+        cp /var/cuda-repo-ubuntu2004-12-1-local/cuda-C5C0804F-keyring.gpg /usr/share/keyrings/ && \
+        ls -l /tmp/temp_cuda99/ && \
+        apt-get update && \
+        DEBIAN_FRONTEND=noninteractive  apt-get install -y --no-install-recommends \
+        cuda-toolkit-12-1 && \
+        ls -l /tmp/temp_cuda99/ && \
+        dpkg --purge cuda-repo-ubuntu2004-12-1-local && \
+        rm -rf /var/lib/apt/lists/* && \
+        cd /tmp && \
+        rm -rf temp_cuda99
 
 
+# config file
+ADD deps/ofed-ucx.conf /root
 
-ADD deps/ofed-ucx.conf /tmp/
 
 # Mellanox OFED libraries: 5.7+
- RUN mkdir /opt/dev_ucx && \
-       wget -O /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64.tgz https://content.mellanox.com/ofed/MLNX_OFED-5.7-1.0.2.0/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64.tgz  && \
-       mv /tmp/ofed-ucx.conf /opt/dev_ucx/ && \
+ RUN mkdir -p /opt/dev_ucx && \
+         wget -O /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64.tgz  https://content.mellanox.com/ofed/MLNX_OFED-5.7-1.0.2.0/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64.tgz  --no-check-certificate --no-verbose  && \
+       mv /root/ofed-ucx.conf /opt/dev_ucx/ && \
        cd  /opt/dev_ucx && \
-        tar -xf MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64.tgz && \
+        tar --no-same-owner -xf MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64.tgz && \
         cp /opt/dev_ucx/ofed-ucx.conf /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64/ && \
         cd  /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64 && \
-        ls -l /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64  && \
+        ls -l /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64 && \
         chmod +x /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64/mlnxofedinstall && \
        /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64/mlnxofedinstall --config /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu20.04-x86_64/ofed-ucx.conf --without-fw-update -q --force
 
 
+
 # UCX  1.13.1
  RUN mkdir /opt/dev_ucx2 && \
-         wget -O /opt/dev_ucx2/ucx-1.13.1.tar.gz https://github.com/openucx/ucx/releases/download/v1.13.1/ucx-1.13.1.tar.gz && \
+         wget -O /opt/dev_ucx2/ucx-1.13.1.tar.gz https://github.com/openucx/ucx/releases/download/v1.13.1/ucx-1.13.1.tar.gz --no-check-certificate --no-verbose  && \
         cd  /opt/dev_ucx2 && \
         tar -xf ucx-1.13.1.tar.gz && \
         cd /opt/dev_ucx2/ucx-1.13.1 && \
@@ -217,11 +177,11 @@ RUN mkdir -p /opt/tritonclient/ && \
     mkdir -p /opt/half && \
     mkdir -p /tmp/half99 && \
     cd /tmp/temp_triton99 && \
-    wget https://github.com/triton-inference-server/server/releases/download/v2.12.0/v2.12.0_ubuntu2004.clients.tar.gz && \
-    tar xzf v2.12.0_ubuntu2004.clients.tar.gz -C /opt/tritonclient/ lib include && \
+    wget https://github.com/triton-inference-server/server/releases/download/v2.31.0/v2.31.0_ubuntu2004.clients.tar.gz && \
+    tar xzf v2.31.0_ubuntu2004.clients.tar.gz -C /opt/tritonclient/ lib include && \
     cd /tmp/temp_proto99 && \
-    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.8.0/protoc-3.8.0-linux-x86_64.zip && \
-    /usr/bin/unzip /tmp/temp_proto99/protoc-3.8.0-linux-x86_64.zip -d /opt/proto && \
+    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.4/protoc-3.19.4-linux-x86_64.zip && \
+    /usr/bin/unzip /tmp/temp_proto99/protoc-3.19.4-linux-x86_64.zip -d /opt/proto && \
     cd /tmp/half99 && \
     wget https://sourceforge.net/projects/half/files/half/2.1.0/half-2.1.0.zip && \
     /usr/bin/unzip /tmp/half99/half-2.1.0.zip -d /opt/half && \
@@ -230,13 +190,16 @@ RUN mkdir -p /opt/tritonclient/ && \
     rm -rf /tmp/temp_proto99 && \
     rm -rf /tmp/half99
 
+
+
 COPY trtserver_base_devel/10_nvidia.json /usr/share/glvnd/egl_vendor.d/10_nvidia.json
 COPY trtserver_base_devel/entrypoint.sh ${DS_DIR}/
 
 
-ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,graphics
+# ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,graphics
+ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,compute,graphics,utility
 
-ENV LD_LIBRARY_PATH /opt/tritonserver/lib:/usr/src/tensorrt/lib:/opt/riva/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH /opt/tritonserver/lib:/usr/src/tensorrt/lib:/opt/riva/lib:/usr/local/cuda-12/lib64:$LD_LIBRARY_PATH
 
 ENTRYPOINT ["${DS_DIR}/entrypoint.sh"]
 
@@ -245,7 +208,9 @@ WORKDIR ${DS_DIR}
 # add symlink
 RUN ln -s /usr/src/tensorrt/bin/trtexec /usr/bin/trtexec
 
+
 RUN ln -s /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so
+
 
 ADD deps/gRPC_installation.sh /root/
 RUN /root/gRPC_installation.sh
@@ -263,11 +228,12 @@ RUN rm -f /usr/lib/x86_64-linux-gnu/libmpeg2.so* /usr/lib/x86_64-linux-gnu/libmp
     /usr/lib/x86_64-linux-gnu/libx265.so.179 /usr/lib/x86_64-linux-gnu/libx264.so.155 /usr/lib/x86_64-linux-gnu/libvpx.so*  \
     /usr/lib/x86_64-linux-gnu/libmpeg2convert.so*
 
-#ENV LD_PRELOAD /usr/lib/x86_64-linux-gnu/libgstbadvideo-1.0.so.0
 
 ADD user_additional_install_devel.sh /opt/
 ADD user_deepstream_python_apps_install.sh /opt/
 
 
 RUN rm -f /root/gRPC_installation.sh /root/*deb && \
-    rm -rf /opt/dev_ucx /opt/dev_ucx2
+    rm -rf /opt/dev_ucx /opt/dev_ucx2 && \
+    rm -rf  /opt/tritonserver/backends/dali && \
+    rm -f  /usr/lib/python3.8/mailcap.py

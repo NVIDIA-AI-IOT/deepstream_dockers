@@ -19,9 +19,13 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
 ARG L4T_VERSION
+
 FROM nvcr.io/nvidia/l4t-tensorrt:r8.5.2-runtime
+
+ADD vpi-dev-2.3.9-aarch64-l4t.deb              /root
+ADD vpi-lib-2.3.9-aarch64-l4t.deb              /root
+
 
 # GStreamer + deepstream dependencies
  RUN apt-get update && \
@@ -37,7 +41,10 @@ FROM nvcr.io/nvidia/l4t-tensorrt:r8.5.2-runtime
         libyaml-cpp-dev \
         libyaml-cpp0.6 \
         libjsoncpp-dev \
+        openssl \
+        libssl1.1 \
 	libcurl4-openssl-dev \
+        wget \
         ca-certificates && \
 	rm -rf /var/lib/apt/lists/* && \
 	apt autoremove
@@ -48,15 +55,13 @@ FROM nvcr.io/nvidia/l4t-tensorrt:r8.5.2-runtime
 RUN mkdir -p /lib/firmware
 
 
-#
-# Install nvidia-vpi-dev for VPI developer packages
-# Use nvidia-vpi if need VPI runtime only
-#
- RUN apt-get update && apt-get install -y --no-install-recommends \
-    nvidia-vpi-dev \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
-
+RUN apt-get update && \
+       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       /root/vpi-dev-2.3.9-aarch64-l4t.deb \
+       /root/vpi-lib-2.3.9-aarch64-l4t.deb && \
+       rm -rf /var/lib/apt/lists/* && \
+       rm -f /root/vpi-dev-2.3.9-aarch64-l4t.deb /root/vpi-lib-2.3.9-aarch64-l4t.deb && \
+       apt autoremove
 
 # IP requirement for removal
 RUN rm -f /usr/lib/aarch64-linux-gnu/libavresample* /usr/lib/aarch64-linux-gnu/libavutil* \
