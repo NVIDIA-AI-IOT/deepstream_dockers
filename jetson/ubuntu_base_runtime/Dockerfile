@@ -23,6 +23,9 @@ ARG L4T_VERSION
 
 FROM nvcr.io/nvidia/l4t-tensorrt:r8.5.2-runtime
 
+# public repo
+RUN apt-key adv --fetch-key https://repo.download.nvidia.com/jetson-ota-public.asc
+
 ADD vpi-dev-2.3.9-aarch64-l4t.deb              /root
 ADD vpi-lib-2.3.9-aarch64-l4t.deb              /root
 
