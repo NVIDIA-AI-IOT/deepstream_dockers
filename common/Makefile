@@ -62,9 +62,7 @@ $(img_type):
 		 -e PLATFORM=$(platform) \
 		 -v $(top)/common/install_$@.sh:/root/tmp/install_$@.sh:ro \
 		 -v $(top)/common/post_install_script.sh:/root/tmp/post_install_script.sh:ro \
-		 -v $(top)/common/files/LicenseAgreement.pdf:/root/tmp/LicenseAgreement.pdf:ro \
 		 -v $(top)/common/files/LicenseAgreementContainer.pdf:/root/tmp/LicenseAgreementContainer.pdf:ro \
-		 -v $(top)/common/files/NvidiaDeepStreamDevelopmentLicense.pdf:/root/tmp/NvidiaDeepStreamDevelopmentLicense.pdf:ro \
 		 -v $(top):/root/top/:ro \
 		 $(platform_run_arg) \
 		 $(target_opts) \

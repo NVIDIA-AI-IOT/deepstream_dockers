@@ -104,9 +104,6 @@ sudo image_url=deepstream:6.3.0-samples-local \
 ## 3 Building Jetson DS docker images
 
 
-#  >  WARNING ** Jetson dockers are not complete. They will be updated soon! **
-
-
 ### 3.1 Pre-requisites
 
 Must be built on a Jetson device (e.g. Jetson AGX Orin 64GB ).
@@ -154,5 +151,4 @@ sudo image_url=deepstream-l4t:6.3.0-samples-local \
      ds_pkg=deepstream_sdk_v6.3.0_jetson.tbz2 \
      ds_pkg_dir=deepstream_sdk_v6.3.0_jetson \
      base_image=jetson-any-custom-base-image make -f Makefile runtime -C jetson/     
-``
-
+```
