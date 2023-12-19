@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 # SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
@@ -21,19 +22,25 @@
 # DEALINGS IN THE SOFTWARE.
 
 
+#
+
 utils_install_librdkafka_from_source()
 {
-    # @{ librdkafka from source; Bug 200630652
+    # @{ librdkafka from source;
+    echo "Installing librdkafka: "
+
     cd "/root/tmp"
-    git clone https://github.com/edenhill/librdkafka.git
+    git clone https://github.com/confluentinc/librdkafka.git
     cd librdkafka
-    git reset --hard 063a9ae7a65cebdf1cc128da9815c05f91a2a996
+    git checkout tags/v2.2.0
     ./configure --enable-ssl
     make -j$(nproc)
     make install
     cd "/root/tmp"
     rm -rf librdkafka
-    # @} librdkafka from source; Bug 200630652
+
+    echo "finished installing librdkafka:"
+    # @} librdkafka from source;
 }
 
 
@@ -46,10 +53,10 @@ utils_install_libhiredis_from_source()
     cd "/root/tmp"
     git clone https://github.com/redis/hiredis.git
     cd hiredis
-    git checkout tags/v1.0.2
+    git checkout tags/v1.2.0
     make USE_SSL=1
     cp libhiredis* /opt/nvidia/deepstream/deepstream/lib/
-    ln -sf /opt/nvidia/deepstream/deepstream/lib/libhiredis.so /opt/nvidia/deepstream/deepstream/lib/libhiredis.so.1.0.0
+    ln -sf /opt/nvidia/deepstream/deepstream/lib/libhiredis.so /opt/nvidia/deepstream/deepstream/lib/libhiredis.so.1.1.0
     ldconfig
     cd "/root/tmp"
 
@@ -59,22 +66,25 @@ utils_install_libhiredis_from_source()
 
 utils_install_libmosquitto_from_source()
 {
+    echo "Installing Dependencies: "
+    apt-get install -y libcjson-dev
+
     echo "Installing libmosquitto: "
     cd "/root/tmp"
-    wget https://mosquitto.org/files/source/mosquitto-1.6.15.tar.gz
-    tar -xvf mosquitto-1.6.15.tar.gz
-    cd mosquitto-1.6.15
+    wget https://mosquitto.org/files/source/mosquitto-2.0.15.tar.gz
+    tar -xvf mosquitto-2.0.15.tar.gz
+    cd mosquitto-2.0.15
     make
     make install
     cd "/root/tmp"
-    rm -rf mosquitto-1.6.15
+    rm -rf mosquitto-2.0.15
     echo "finished installing libmosquitto"
+
 }
 
 
 #Throws an error and causes a build failure for all errors in the script
 #Custom Message describes where the error was thrown
-#Bug 200714632
 set -o errtrace
 trap "echo CUSTOM MESSAGE: ERROR occured in this file: $BASH_SOURCE}" ERR
 set -o errexit
@@ -94,4 +104,5 @@ utils_install_libmosquitto_from_source
 # License and IP
 mv /opt/user_additional_install_devel.sh /opt/nvidia/deepstream/deepstream/user_additional_install.sh
 mv /opt/user_deepstream_python_apps_install.sh /opt/nvidia/deepstream/deepstream/user_deepstream_python_apps_install.sh
+# cp /root/tmp/LicenseAgreementContainer.pdf /opt/nvidia/deepstream/deepstream/
 cp /root/tmp/NvidiaDeepStreamDevelopmentLicense.pdf /opt/nvidia/deepstream/deepstream/

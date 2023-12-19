@@ -22,9 +22,9 @@
 img_type = base test5 runtime devel its trtis triton-devel ds-custom
 prefix = deepstream_x86
 platform = x86_64
-platform_build_arg = --build-arg TENSORRT_VERSION="8.5.3-1+cuda11.8"
-platform_build_arg += --build-arg CUDNN_VERSION="8.8.1.3-1+cuda12.0"
-platform_build_arg += --build-arg CUDA_VERSION="12.1.0"
+platform_build_arg = --build-arg TENSORRT_VERSION="8.6.1.6-1+cuda12.0"
+platform_build_arg += --build-arg CUDNN_VERSION="8.9.4.25-1+cuda12.2"
+platform_build_arg += --build-arg CUDA_VERSION="12.2.0"
 platform_build_arg += --build-arg DS_CUSTOM_BASE_IMAGE=${ds_custom_base_image}
 
 DOCKER=docker

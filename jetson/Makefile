@@ -19,11 +19,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
-
 img_type = base test5 runtime triton
 prefix = deepstream_jetson
-L4T_VERSION=r8.5.2.2
+L4T_VERSION=r8.6.2.1
 platform="jetson"
 qemu_bin="qemu-aarch64-static"
 qemu_bin_path="/usr/bin/$(qemu_bin)"
