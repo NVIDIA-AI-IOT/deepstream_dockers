@@ -5,7 +5,7 @@ This information is useful for both x86 systems with dGPU setup and on NVIDIA Je
 
 ## 1 Additional Installations to use all DeepStreamSDK Features within the docker container.
 
-With DS 6.4, DeepStream docker containers do not package libraries necessary for certain multimedia operations like audio data parsing, CPU decode, and CPU encode. This change could affect processing certain video streams/files like mp4 that include audio tracks.
+Since DS 6.3, deepStream docker containers do not package libraries necessary for certain multimedia operations like audio data parsing, CPU decode, and CPU encode. This change could affect processing certain video streams/files like mp4 that include audio tracks.
 
 Please run the below script inside the docker images to install additional packages that might be necessary to use all of the DeepStreamSDK features :
 
