@@ -1,4 +1,5 @@
 #!/bin/bash
+#
 # SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
@@ -27,17 +28,22 @@
 
 utils_install_librdkafka_from_source()
 {
-    # @{ librdkafka from source; Bug 200630652
+    # @{ librdkafka from source;
+    echo "Installing librdkafka: "
+
     cd "/root/tmp"
-    git clone https://github.com/edenhill/librdkafka.git
+    git clone https://github.com/confluentinc/librdkafka.git
     cd librdkafka
-    git reset --hard 063a9ae7a65cebdf1cc128da9815c05f91a2a996
+    git checkout tags/v2.2.0
     ./configure --enable-ssl
     make -j$(nproc)
     make install
     cd "/root/tmp"
     rm -rf librdkafka
-    # @} librdkafka from source; Bug 200630652
+
+    echo "finished installing librdkafka:"
+    # @} librdkafka from source;
+
 }
 
 utils_install_libhiredis_from_source()
@@ -49,10 +55,10 @@ utils_install_libhiredis_from_source()
     cd "/root/tmp"
     git clone https://github.com/redis/hiredis.git
     cd hiredis
-    git checkout tags/v1.0.2
+    git checkout tags/v1.2.0
     make USE_SSL=1
     cp libhiredis* /opt/nvidia/deepstream/deepstream/lib/
-    ln -sf /opt/nvidia/deepstream/deepstream/lib/libhiredis.so /opt/nvidia/deepstream/deepstream/lib/libhiredis.so.1.0.0
+    ln -sf /opt/nvidia/deepstream/deepstream/lib/libhiredis.so /opt/nvidia/deepstream/deepstream/lib/libhiredis.so.1.1.0
     ldconfig
     cd "/root/tmp"
     echo "finished installing libhiredis"
@@ -61,16 +67,21 @@ utils_install_libhiredis_from_source()
 
 utils_install_libmosquitto_from_source()
 {
+    echo "Installing Dependencies: "
+    apt update
+    apt-get install -y libcjson-dev libssl-dev
+
     echo "Installing libmosquitto: "
     cd "/root/tmp"
-    wget https://mosquitto.org/files/source/mosquitto-1.6.15.tar.gz
-    tar -xvf mosquitto-1.6.15.tar.gz
-    cd mosquitto-1.6.15
+    wget https://mosquitto.org/files/source/mosquitto-2.0.15.tar.gz
+    tar -xvf mosquitto-2.0.15.tar.gz
+    cd mosquitto-2.0.15
     make
     make install
     cd "/root/tmp"
-    rm -rf mosquitto-1.6.15
+    rm -rf mosquitto-2.0.15
     echo "finished installing libmosquitto"
+
 }
 
 
@@ -80,7 +91,11 @@ utils_install_librdkafka_from_source
 
 tar -xvf "${DS_REL_PKG}" -C /
 /opt/nvidia/deepstream/deepstream/install.sh
-/opt/nvidia/deepstream/deepstream/samples/triton_backend_setup.sh
+
+# No longer needed since the Jetson triton base docker is available
+# /opt/nvidia/deepstream/deepstream/samples/triton_backend_setup.sh
+
+
 ldconfig
 
 utils_install_libhiredis_from_source

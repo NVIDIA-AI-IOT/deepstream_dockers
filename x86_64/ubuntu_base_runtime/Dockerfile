@@ -19,15 +19,16 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+
 ARG CUDA_VERSION
 
-FROM nvcr.io/nvidia/cuda:12.1.1-runtime-ubuntu20.04
+FROM nvcr.io/nvidia/cuda:12.2.0-runtime-ubuntu22.04
 
 ARG TENSORRT_VERSION
 ARG CUDNN_VERSION
 
 
-# Add open GL libraries
+# Add open GL libraries and other required components. Added new gstreamer components and additional components including CVE patches
 RUN apt-get update && \
         DEBIAN_FRONTEND=noninteractive  apt-get install -y --no-install-recommends \
         pkg-config \
@@ -35,125 +36,75 @@ RUN apt-get update && \
         libgl1-mesa-dev \
         libegl1-mesa-dev \
         libgles2-mesa-dev \
-        libegl-mesa0 && \
-        rm -rf /var/lib/apt/lists/* && \
-        apt autoremove
-
-
-RUN apt-get update && \
-        DEBIAN_FRONTEND=noninteractive  apt-get install -y  --no-install-recommends \
+        libegl-mesa0 \
+        libglib2.0-dev \
+        libcjson-dev \
+        libssl-dev \
         wget \
         libyaml-cpp-dev \
-        gnutls-bin && \
+        libssl-dev \
+        openssl \
+        libssl3 \
+        gnutls-bin \
+        gstreamer1.0-tools \
+        gstreamer1.0-plugins-good \
+        gstreamer1.0-plugins-bad \
+        gstreamer1.0-plugins-ugly \
+        gstreamer1.0-alsa \
+        libssl3  \
+        libgstreamer1.0-0 \
+        libgstrtspserver-1.0-0 \
+        libjansson4 \
+        librabbitmq4 \
+        libuuid1 \
+        libc-bin \
+        libcurl3-gnutls \
+        libcurl4 \
+        libjson-glib-1.0-0 \
+        gstreamer1.0-rtsp \
+        rsyslog \
+        git \
+        openssl \
+        python3 \
+        libjsoncpp-dev \
+        gcc \
+        libjpeg-dev \
+        libxml2 \
+        zlib1g \
+        tzdata && \
         rm -rf /var/lib/apt/lists/* && \
         apt autoremove
 
-#
-# IP requirement for removal
-#  Remove  gstreamer1.0-libav \
+# Add TensorRT and CuDNN repo(s)
+# NOTE This should already be downloaded into x86_64 directory
+ADD nv-tensorrt-local-repo-ubuntu2204-8.6.1-cuda-12.0_1.0-1_amd64.deb /tmp
+ADD cudnn-local-repo-ubuntu2204-8.9.4.25_1.0-1_amd64.deb /tmp
 
 
-RUN apt-get update && \
-	DEBIAN_FRONTEND=noninteractive 	apt-get install -y --no-install-recommends \
-	gstreamer1.0-tools \
-	gstreamer1.0-plugins-good \
-	gstreamer1.0-plugins-bad \
-	gstreamer1.0-plugins-ugly \
-	gstreamer1.0-alsa \
-	libssl1.1 \
-	libgstreamer1.0-0 \
-	libgstrtspserver-1.0-0 \
-        libjansson4 \
-	librabbitmq4 \
-	libuuid1 \
-	libcurl4 \
-	libjson-glib-1.0-0 \
-	gstreamer1.0-rtsp \
-	rsyslog \
-        openssl \
-	git \
-        openssl \
-        libssl1.1 \
-	python3 \
-        libjsoncpp-dev \
-        gcc \
-        libxml2 \
-	tzdata && \
-	rm -rf /var/lib/apt/lists/* && \
-	apt autoremove
-
-
-
-# Add TensorRT repo
-# NOTE THis should already be downloaded into x86_64 directory
-ADD  nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb /tmp
-
-# Add TRT repo
  RUN mkdir -p /tmp/temp_trt && \
        cd /tmp/temp_trt && \
-       mv /tmp/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb  /tmp/temp_trt/ && \
+       mv /tmp/nv-tensorrt-local-repo-ubuntu2204-8.6.1-cuda-12.0_1.0-1_amd64.deb /tmp/temp_trt/ && \
        ls -l /tmp/temp_trt/ && \
-       dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb && \
-       cp /var/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8/nv-tensorrt-local-3EFA7C6A-keyring.gpg /usr/share/keyrings/ && \
+       mv /tmp/cudnn-local-repo-ubuntu2204-8.9.4.25_1.0-1_amd64.deb /tmp/temp_trt/ && \
+       ls -l /tmp/temp_trt/ && \
+       dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2204-8.6.1-cuda-12.0_1.0-1_amd64.deb && \
+       cp /var/nv-tensorrt-local-repo-ubuntu2204-8.6.1-cuda-12.0/nv-tensorrt-local-42B2FC56-keyring.gpg /usr/share/keyrings/ && \
+       dpkg -i ./cudnn-local-repo-ubuntu2204-8.9.4.25_1.0-1_amd64.deb && \
+       cp /var/cudnn-local-repo-ubuntu2204-8.9.4.25/cudnn-local-3C3A81D3-keyring.gpg /usr/share/keyrings/ && \
        apt-get update && \
        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       libnvinfer8=8.5.3-1+cuda11.8 \
-       libnvinfer-plugin8=8.5.3-1+cuda11.8 \
-       libnvparsers8=8.5.3-1+cuda11.8 \
-       libnvonnxparsers8=8.5.3-1+cuda11.8 \
-       libnvinfer-bin=8.5.3-1+cuda11.8 \
-       libnvinfer-dev=8.5.3-1+cuda11.8 \
-       libnvinfer-plugin-dev=8.5.3-1+cuda11.8 \
-       libnvparsers-dev=8.5.3-1+cuda11.8 \
-       libnvonnxparsers-dev=8.5.3-1+cuda11.8 \
-       libnvinfer-samples=8.5.3-1+cuda11.8 \
-       python3-libnvinfer=8.5.3-1+cuda11.8 \
-       python3-libnvinfer-dev=8.5.3-1+cuda11.8 \
-       uff-converter-tf=8.5.3-1+cuda11.8 \
-       graphsurgeon-tf=8.5.3-1+cuda11.8 \
-       libcudnn8=8.8.1.3-1+cuda12.0 \
-       libcudnn8-dev=8.8.1.3-1+cuda12.0 && \
+       tensorrt  \
+       libcudnn8-dev=8.9.4.25-1+cuda12.2 \
+       libcudnn8=8.9.4.25-1+cuda12.2 && \
        cd /tmp && \
-       dpkg --purge nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8 1.0-1 && \
+       dpkg --purge nv-tensorrt-local-repo-ubuntu2204-8.6.1-cuda-12.0 && \
+       dpkg --purge cudnn-local-repo-ubuntu2204-8.9.4.25 && \
        rm -rf temp_trt && \
        rm -rf /var/lib/apt/lists/*
 
-
-
-# install TensorRT repo from a hosted file on a server
-
-# Add TRT repo
-# RUN mkdir -p /tmp/temp_trt && \
-#       cd /tmp/temp_trt && \
-#       wget https://<externally hosted> && \
-#       ls -l /tmp/temp_trt/ && \
-#       dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8_1.0-1_amd64.deb && \
-#       cp /var/nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8/nv-tensorrt-local-3EFA7C6A-keyring.gpg /usr/share/keyrings/ && \
-#       apt-get update && \
-#       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-#       libnvinfer8=8.5.3-1+cuda11.8 \
-#       libnvinfer-plugin8=8.5.3-1+cuda11.8 \
-#       libnvparsers8=8.5.3-1+cuda11.8 \
-#       libnvonnxparsers8=8.5.3-1+cuda11.8 \
-#       libnvinfer-bin=8.5.3-1+cuda11.8 \
-#       libnvinfer-dev=8.5.3-1+cuda11.8 \
-#       libnvinfer-plugin-dev=8.5.3-1+cuda11.8 \
-#       libnvparsers-dev=8.5.3-1+cuda11.8 \
-#       libnvonnxparsers-dev=8.5.3-1+cuda11.8 \
-#       libnvinfer-samples=8.5.3-1+cuda11.8 \
-#       python3-libnvinfer=8.5.3-1+cuda11.8 \
-#       python3-libnvinfer-dev=8.5.3-1+cuda11.8 \
-#       uff-converter-tf=8.5.3-1+cuda11.8 \
-#       graphsurgeon-tf=8.5.3-1+cuda11.8 \
-#       libcudnn8=8.8.1.3-1+cuda12.0 \
-#       libcudnn8-dev=8.8.1.3-1+cuda12.0 && \
-#       cd /tmp && \
-#       dpkg --purge nv-tensorrt-local-repo-ubuntu2004-8.5.3-cuda-11.8 1.0-1 && \
-#       rm -rf temp_trt && \
-#       rm -rf /var/lib/apt/lists/*
-
-
-
+# rsyslog into /etc/init.d/ (service can run)
+ADD deps/rsyslog  /etc/init.d/
+RUN chmod +x /etc/init.d/rsyslog
 
 
 COPY trtserver_base_devel/10_nvidia.json /usr/share/glvnd/egl_vendor.d/10_nvidia.json
@@ -169,14 +120,17 @@ ADD user_additional_install_runtime.sh /opt/
 
 RUN ln -s /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1 /usr/lib/x86_64-linux-gnu/libnvcuvid.so && \
     ln -s /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so && \
-    ln -s /usr/local/cuda/lib64/libcudart.so.12.1.105 /usr/local/cuda/lib64/libcudart.so
-
+    ln -s /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-ml.so
 
 ADD deps/gRPC_installation.sh /root/
 RUN /root/gRPC_installation.sh
 
+ENV PATH="${PATH}:${HOME}/.local/bin"
+ENV LD_LIBARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
+ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:${HOME}/.local/lib/pkgconfig"
+
+
 # added wget so gRPC script could install
-# RUN apt-get remove --purge -y wget
 RUN rm /root/gRPC_installation.sh && \
     cd /tmp && \
     rm -rf temp_cuda99
@@ -194,8 +148,7 @@ RUN rm -f /usr/lib/x86_64-linux-gnu/libavresample* /usr/lib/x86_64-linux-gnu/lib
     /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstx265.so* /usr/lib/x86_64-linux-gnu/libde265.so*
 RUN rm -f /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstvpx.so* \
     /usr/lib/x86_64-linux-gnu/libmpeg2.so.0* /usr/lib/x86_64-linux-gnu/libmpeg2encpp-2.1.so* /usr/lib/x86_64-linux-gnu/libmpg123.so* \
-    /usr/lib/x86_64-linux-gnu/libx265.so.179 /usr/lib/x86_64-linux-gnu/libx264.so.155 /usr/lib/x86_64-linux-gnu/libvpx.so*   \
-    /usr/lib/x86_64-linux-gnu/libmpeg2convert.so*
-
-
+    /usr/lib/x86_64-linux-gnu/libx265.so* /usr/lib/x86_64-linux-gnu/libx264.so* /usr/lib/x86_64-linux-gnu/libvpx.so*   \
+    /usr/lib/x86_64-linux-gnu/libmpeg2convert.so* /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstopenh264.so \
+    /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstnvcodec.so
 

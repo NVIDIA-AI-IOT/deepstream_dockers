@@ -21,13 +21,17 @@
 
 ARG L4T_VERSION
 
-FROM nvcr.io/nvidia/l4t-tensorrt:r8.5.2-runtime
+FROM nvcr.io/nvidia/l4t-tensorrt:r8.6.2-runtime
 
-# public repo
-RUN apt-key adv --fetch-key https://repo.download.nvidia.com/jetson-ota-public.asc
+#
+# Configure nvidia public apt repo
+#
 
-ADD vpi-dev-2.3.9-aarch64-l4t.deb              /root
-ADD vpi-lib-2.3.9-aarch64-l4t.deb              /root
+RUN apt-key adv --fetch-keys https://repo.download.nvidia.com/jetson/jetson-ota-public.asc
+RUN echo "deb https://repo.download.nvidia.com/jetson/common r36.2 main" >> /etc/apt/sources.list
+
+ADD vpi-lib-3.0.10-aarch64-l4t.deb /root
+ADD vpi-dev-3.0.10-aarch64-l4t.deb /root
 
 
 # GStreamer + deepstream dependencies
@@ -37,34 +41,42 @@ ADD vpi-lib-2.3.9-aarch64-l4t.deb              /root
 	tzdata \
 	libgstrtspserver-1.0-0 \
 	libjansson4 \
-	libglib2.0-0 \
+        libglib2.0-dev \
 	libjson-glib-1.0-0 \
 	librabbitmq4 \
 	gstreamer1.0-rtsp \
+        libgstreamer1.0-0 \
+        gstreamer1.0-tools \
         libyaml-cpp-dev \
-        libyaml-cpp0.6 \
         libjsoncpp-dev \
+        libjpeg-dev \
         openssl \
-        libssl1.1 \
+        libssl3 \
+        build-essential \
+        libssl-dev \
 	libcurl4-openssl-dev \
+        libcjson-dev \
         wget \
         ca-certificates && \
 	rm -rf /var/lib/apt/lists/* && \
 	apt autoremove
 
 
-
-#work-around for vpi tests
+# work-around for vpi tests
 RUN mkdir -p /lib/firmware
 
 
 RUN apt-get update && \
        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       /root/vpi-dev-2.3.9-aarch64-l4t.deb \
-       /root/vpi-lib-2.3.9-aarch64-l4t.deb && \
+       /root/vpi-dev-3.0.10-aarch64-l4t.deb \
+       /root/vpi-lib-3.0.10-aarch64-l4t.deb && \
        rm -rf /var/lib/apt/lists/* && \
-       rm -f /root/vpi-dev-2.3.9-aarch64-l4t.deb /root/vpi-lib-2.3.9-aarch64-l4t.deb && \
+       rm -f /root/vpi-dev-3.0.10-aarch64-l4t.deb /root/vpi-lib-3.0.10-aarch64-l4t.deb && \
        apt autoremove
+
+# rsyslog into /etc/init.d/ (service can run)
+ADD deps/rsyslog  /etc/init.d/
+RUN chmod +x /etc/init.d/rsyslog
 
 # IP requirement for removal
 RUN rm -f /usr/lib/aarch64-linux-gnu/libavresample* /usr/lib/aarch64-linux-gnu/libavutil* \
@@ -73,11 +85,12 @@ RUN rm -f /usr/lib/aarch64-linux-gnu/libavresample* /usr/lib/aarch64-linux-gnu/l
 RUN rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstaudioparsers.so
 RUN rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstfaad.so
 RUN rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvoaacenc.so \
-     /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstx264.so /usr/lib/aarch64-linux-gnu/libx264.so.155  \
+     /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstx264.so /usr/lib/aarch64-linux-gnu/libx264.so*  \
      /usr/lib/aarch64-linux-gnu/libmpeg2.so* /usr/lib/aarch64-linux-gnu/libmpeg2convert.so* /usr/lib/aarch64-linux-gnu/libmpeg2encpp-2.1.so* 
-RUN rm -f  /usr/lib/aarch64-linux-gnu/libmpg123.so* /usr/lib/aarch64-linux-gnu/libvpx.so* /usr/lib/aarch64-linux-gnu/libx265.so.179  \
+RUN rm -f  /usr/lib/aarch64-linux-gnu/libmpg123.so* /usr/lib/aarch64-linux-gnu/libvpx.so* /usr/lib/aarch64-linux-gnu/libx265.so*  \
      /usr/lib/aarch64-linux-gnu/libde265.so* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstx265.so*  \
-     /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstde265.so* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvpx.so
+     /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstde265.so* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvpx.so \
+     /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstopenh264.so /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvcodec.so
 
 
 
@@ -87,58 +100,37 @@ WORKDIR /opt/nvidia/deepstream/deepstream
 # User additional install script (moved to the correct location with the license file)
 ADD user_additional_install_runtime.sh /opt/
 
+# workaround for directory change from tegra to nvidia
+RUN ln -s /usr/lib/aarch64-linux-gnu/nvidia /usr/lib/aarch64-linux-gnu/tegra
+
 
 # Workaround for Cuda missing symlinks in FAT base docker
-RUN ln -s  /usr/local/cuda-11.4/targets/aarch64-linux/lib/libcufft.so.10.6.0.202 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libcufft.so
-RUN ln -s  /usr/local/cuda-11.4/targets/aarch64-linux/lib/libcublas.so.11.6.6.84 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libcublas.so
+RUN ln -s  /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcufft.so.11 /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcufft.so
+RUN ln -s  /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcublas.so.12 /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcublas.so
 
 
 # Workaround for deepstream-app --version-all
-RUN ln -s /usr/lib/aarch64-linux-gnu/libcudnn.so.8.6.0 /usr/lib/aarch64-linux-gnu/libcudnn.so
-RUN ln -s /usr/local/cuda-11.4/lib64/libcudart.so.11.4.298 /usr/local/cuda-11.4/lib64/libcudart.so
+RUN ln -s /usr/lib/aarch64-linux-gnu/libcudnn.so.8 /usr/lib/aarch64-linux-gnu/libcudnn.so
+RUN ln -s /usr/local/cuda-12.2/lib64/libcudart.so.12 /usr/local/cuda-12.2/lib64/libcudart.so
+
+RUN ln -s /usr/src/tensorrt/bin/trtexec /usr/bin/trtexec
 
 # Workaround for build
 # Nvinfer libs:
 
- RUN ln -s /usr/lib/aarch64-linux-gnu/libnvinfer.so.8.5.2 /usr/lib/aarch64-linux-gnu/libnvinfer.so
+  RUN ln -s  /usr/lib/aarch64-linux-gnu/libnvparsers.so.8 /usr/lib/aarch64-linux-gnu/libnvparsers.so
 
- RUN ln -s /usr/lib/aarch64-linux-gnu/libnvparsers.so.8.5.2 /usr/lib/aarch64-linux-gnu/libnvparsers.so
+  RUN ln -s /usr/lib/aarch64-linux-gnu/libnvinfer_plugin.so.8 /usr/lib/aarch64-linux-gnu/libnvinfer_plugin.so
 
- RUN ln -s /usr/lib/aarch64-linux-gnu/libnvinfer_plugin.so.8.5.2 /usr/lib/aarch64-linux-gnu/libnvinfer_plugin.so
+  RUN ln -s /usr/lib/aarch64-linux-gnu/libnvcaffe_parser.so.8 /usr/lib/aarch64-linux-gnu/libnvonnxparser.so
 
- RUN ln -s /usr/lib/aarch64-linux-gnu/libnvonnxparser.so.8.5.2 /usr/lib/aarch64-linux-gnu/libnvonnxparser.so
+ RUN ln -s /usr/lib/aarch64-linux-gnu/libnvparsers.so.8.6.2 /usr/lib/aarch64-linux-gnu/libnvcaffe_parser.so
 
- RUN ln -s /usr/lib/aarch64-linux-gnu/libnvparsers.so.8.5.2 /usr/lib/aarch64-linux-gnu/libnvcaffe_parser.so
-
-
-# NPP libs:
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppc.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppc.so
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppial.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppial.so
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppicc.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppicc.so
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppidei.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppidei.so
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppif.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppif.so
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppig.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppig.so
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppim.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppim.so
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppist.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppist.so
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppisu.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppisu.so
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppitc.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnppitc.so
-
- RUN ln -s /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnpps.so.11 /usr/local/cuda-11.4/targets/aarch64-linux/lib/libnpps.so
 
 
 RUN ldconfig
 
-ENV LD_LIBRARY_PATH /usr/local/cuda-11.4/lib64
+ENV LD_LIBRARY_PATH /usr/local/cuda-12.2/lib64
 
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES all
