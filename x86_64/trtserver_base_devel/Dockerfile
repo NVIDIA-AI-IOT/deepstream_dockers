@@ -117,6 +117,7 @@ RUN apt-get update && \
         wget \
         unzip \
         libxml2 \
+	libopencv-core-dev libopencv-imgcodecs-dev \
         && rm -rf /var/lib/apt/lists/* \
         ; apt autoremove
 
