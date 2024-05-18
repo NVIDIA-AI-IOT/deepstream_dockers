@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,10 +19,9 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-
 ARG CUDA_VERSION
 
-FROM nvcr.io/nvidia/cuda:12.2.0-runtime-ubuntu22.04
+FROM nvcr.io/nvidia/cuda:12.2.2-runtime-ubuntu22.04
 
 ARG TENSORRT_VERSION
 ARG CUDNN_VERSION
@@ -64,41 +63,65 @@ RUN apt-get update && \
         gstreamer1.0-rtsp \
         rsyslog \
         git \
-        openssl \
         python3 \
         libjsoncpp-dev \
         gcc \
+        g++ \
+        make \
         libjpeg-dev \
         libxml2 \
+        bzip2 \
         zlib1g \
+        linux-libc-dev \
         tzdata && \
         rm -rf /var/lib/apt/lists/* && \
         apt autoremove
 
+# remove tensorrt package install and force particular libraries/packages to a specific version
+#  libnvinfer8=8.6.1.6-1+cuda12.0 
 # Add TensorRT and CuDNN repo(s)
-# NOTE This should already be downloaded into x86_64 directory
+# NOTE These should already be downloaded into x86_64 directory
 ADD nv-tensorrt-local-repo-ubuntu2204-8.6.1-cuda-12.0_1.0-1_amd64.deb /tmp
-ADD cudnn-local-repo-ubuntu2204-8.9.4.25_1.0-1_amd64.deb /tmp
+ADD cudnn-local-repo-ubuntu2204-8.9.6.50_1.0-1_amd64.deb  /tmp
 
 
- RUN mkdir -p /tmp/temp_trt && \
+RUN mkdir -p /tmp/temp_trt && \
        cd /tmp/temp_trt && \
        mv /tmp/nv-tensorrt-local-repo-ubuntu2204-8.6.1-cuda-12.0_1.0-1_amd64.deb /tmp/temp_trt/ && \
        ls -l /tmp/temp_trt/ && \
-       mv /tmp/cudnn-local-repo-ubuntu2204-8.9.4.25_1.0-1_amd64.deb /tmp/temp_trt/ && \
+       mv /tmp/cudnn-local-repo-ubuntu2204-8.9.6.50_1.0-1_amd64.deb /tmp/temp_trt/ && \
        ls -l /tmp/temp_trt/ && \
        dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2204-8.6.1-cuda-12.0_1.0-1_amd64.deb && \
        cp /var/nv-tensorrt-local-repo-ubuntu2204-8.6.1-cuda-12.0/nv-tensorrt-local-42B2FC56-keyring.gpg /usr/share/keyrings/ && \
-       dpkg -i ./cudnn-local-repo-ubuntu2204-8.9.4.25_1.0-1_amd64.deb && \
-       cp /var/cudnn-local-repo-ubuntu2204-8.9.4.25/cudnn-local-3C3A81D3-keyring.gpg /usr/share/keyrings/ && \
+       dpkg -i ./cudnn-local-repo-ubuntu2204-8.9.6.50_1.0-1_amd64.deb && \
+       cp /var/cudnn-local-repo-ubuntu2204-8.9.6.50/cudnn-local-1998375D-keyring.gpg /usr/share/keyrings/ && \
        apt-get update && \
        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       tensorrt  \
-       libcudnn8-dev=8.9.4.25-1+cuda12.2 \
-       libcudnn8=8.9.4.25-1+cuda12.2 && \
+       libnvinfer-lean8=8.6.1.6-1+cuda12.0 \
+       libnvinfer-vc-plugin8=8.6.1.6-1+cuda12.0 \
+       libnvinfer-headers-dev=8.6.1.6-1+cuda12.0 \
+       libnvinfer-dev=8.6.1.6-1+cuda12.0 \
+       libnvinfer-headers-plugin-dev=8.6.1.6-1+cuda12.0 \
+       libnvinfer-plugin-dev=8.6.1.6-1+cuda12.0 \
+       libnvonnxparsers-dev=8.6.1.6-1+cuda12.0 \
+       libnvinfer-lean-dev=8.6.1.6-1+cuda12.0 \
+       libnvparsers-dev=8.6.1.6-1+cuda12.0 \
+       python3-libnvinfer-lean=8.6.1.6-1+cuda12.0 \
+       python3-libnvinfer-dispatch=8.6.1.6-1+cuda12.0 \
+       uff-converter-tf=8.6.1.6-1+cuda12.0 \
+       onnx-graphsurgeon=8.6.1.6-1+cuda12.0 \
+       libnvinfer-bin=8.6.1.6-1+cuda12.0 \
+       libnvinfer-dispatch-dev=8.6.1.6-1+cuda12.0 \
+       libnvinfer-dispatch8=8.6.1.6-1+cuda12.0 \
+       libnvonnxparsers-dev=8.6.1.6-1+cuda12.0 \
+       libnvonnxparsers8=8.6.1.6-1+cuda12.0 \
+       libnvinfer-vc-plugin-dev=8.6.1.6-1+cuda12.0 \
+       libnvinfer-samples=8.6.1.6-1+cuda12.0 \
+       libcudnn8-dev=8.9.6.50-1+cuda12.2 \
+       libcudnn8=8.9.6.50-1+cuda12.2 && \
        cd /tmp && \
        dpkg --purge nv-tensorrt-local-repo-ubuntu2204-8.6.1-cuda-12.0 && \
-       dpkg --purge cudnn-local-repo-ubuntu2204-8.9.4.25 && \
+       dpkg --purge cudnn-local-repo-ubuntu2204-8.9.6.50 && \
        rm -rf temp_trt && \
        rm -rf /var/lib/apt/lists/*
 
@@ -122,15 +145,17 @@ RUN ln -s /usr/lib/x86_64-linux-gnu/libnvcuvid.so.1 /usr/lib/x86_64-linux-gnu/li
     ln -s /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so && \
     ln -s /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-ml.so
 
+
 ADD deps/gRPC_installation.sh /root/
 RUN /root/gRPC_installation.sh
 
 ENV PATH="${PATH}:${HOME}/.local/bin"
-ENV LD_LIBARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
 ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:${HOME}/.local/lib/pkgconfig"
 
 
 # added wget so gRPC script could install
+# RUN apt-get remove --purge -y wget
 RUN rm /root/gRPC_installation.sh && \
     cd /tmp && \
     rm -rf temp_cuda99

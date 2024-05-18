@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,7 +21,7 @@
 
 # Example script to build Jetson triton docker on a Jetson device
 
-sudo image_url=deepstream-l4t:6.4.0-triton-local \
-     ds_pkg=deepstream_sdk_v6.4.0_jetson.tbz2 \
-     ds_pkg_dir=deepstream_sdk_v6.4.0_jetson \
+sudo image_url=deepstream-l4t:7.0.0-triton-local \
+     ds_pkg=deepstream_sdk_v7.0.0_jetson.tbz2 \
+     ds_pkg_dir=deepstream_sdk_v7.0.0_jetson \
      base_image=jetson-any-custom-base-image make -f Makefile triton -C jetson/

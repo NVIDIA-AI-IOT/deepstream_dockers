@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,6 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+
 ARG L4T_VERSION
 
 FROM nvcr.io/nvidia/l4t-tensorrt:r8.6.2-runtime
@@ -28,11 +29,12 @@ FROM nvcr.io/nvidia/l4t-tensorrt:r8.6.2-runtime
 #
 
 RUN apt-key adv --fetch-keys https://repo.download.nvidia.com/jetson/jetson-ota-public.asc
-RUN echo "deb https://repo.download.nvidia.com/jetson/common r36.2 main" >> /etc/apt/sources.list
+RUN echo "deb https://repo.download.nvidia.com/jetson/common r36.3 main" >> /etc/apt/sources.list
 
-ADD vpi-lib-3.0.10-aarch64-l4t.deb /root
-ADD vpi-dev-3.0.10-aarch64-l4t.deb /root
 
+
+ADD vpi-dev-3.1.5-aarch64-l4t.deb /root
+ADD vpi-lib-3.1.5-aarch64-l4t.deb /root
 
 # GStreamer + deepstream dependencies
  RUN apt-get update && \
@@ -56,27 +58,26 @@ ADD vpi-dev-3.0.10-aarch64-l4t.deb /root
         libssl-dev \
 	libcurl4-openssl-dev \
         libcjson-dev \
+        linux-libc-dev \
         wget \
         ca-certificates && \
 	rm -rf /var/lib/apt/lists/* && \
 	apt autoremove
 
 
-# work-around for vpi tests
-RUN mkdir -p /lib/firmware
 
-
-RUN apt-get update && \
+RUN  mkdir -p /lib/firmware ; apt-get update && \
        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       /root/vpi-dev-3.0.10-aarch64-l4t.deb \
-       /root/vpi-lib-3.0.10-aarch64-l4t.deb && \
+       /root/vpi-dev-3.1.5-aarch64-l4t.deb \
+       /root/vpi-lib-3.1.5-aarch64-l4t.deb && \
        rm -rf /var/lib/apt/lists/* && \
-       rm -f /root/vpi-dev-3.0.10-aarch64-l4t.deb /root/vpi-lib-3.0.10-aarch64-l4t.deb && \
+       rm -f /root/vpi-dev-3.1.5-aarch64-l4t.deb /root/vpi-lib-3.1.5-aarch64-l4t.deb && \
        apt autoremove
 
 # rsyslog into /etc/init.d/ (service can run)
 ADD deps/rsyslog  /etc/init.d/
 RUN chmod +x /etc/init.d/rsyslog
+
 
 # IP requirement for removal
 RUN rm -f /usr/lib/aarch64-linux-gnu/libavresample* /usr/lib/aarch64-linux-gnu/libavutil* \
@@ -103,7 +104,6 @@ ADD user_additional_install_runtime.sh /opt/
 # workaround for directory change from tegra to nvidia
 RUN ln -s /usr/lib/aarch64-linux-gnu/nvidia /usr/lib/aarch64-linux-gnu/tegra
 
-
 # Workaround for Cuda missing symlinks in FAT base docker
 RUN ln -s  /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcufft.so.11 /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcufft.so
 RUN ln -s  /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcublas.so.12 /usr/local/cuda-12.2/targets/aarch64-linux/lib/libcublas.so
@@ -117,6 +117,7 @@ RUN ln -s /usr/src/tensorrt/bin/trtexec /usr/bin/trtexec
 
 # Workaround for build
 # Nvinfer libs:
+
 
   RUN ln -s  /usr/lib/aarch64-linux-gnu/libnvparsers.so.8 /usr/lib/aarch64-linux-gnu/libnvparsers.so
 
@@ -138,7 +139,6 @@ ENV NVIDIA_DRIVER_CAPABILITIES all
 ENV LD_PRELOAD /usr/lib/aarch64-linux-gnu/libgomp.so.1:/lib/aarch64-linux-gnu/libGLdispatch.so:$LD_PRELOAD
 
 # IP requirement for removal
-# remove gstreamer1.0-libav (it is also in the base docker image)
 RUN DEBIAN_FRONTEND=noninteractive apt-get purge -y gstreamer1.0-libav
 
 # Clean up link to internal repo

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,7 +23,7 @@
 img_type = base test5 runtime devel its trtis triton-devel triton-devel-gc
 prefix = deepstream_x86
 platform = x86_64
-ds_dir = /opt/nvidia/deepstream/deepstream-6.4
+ds_dir = /opt/nvidia/deepstream/deepstream-7.0
 platform_build_arg = --build-arg TENSORRT_VERSION="8.5.3-1+cuda11.8"
 platform_build_arg += --build-arg CUDNN_VERSION="8.8.1.3-1+cuda12.0"
 platform_build_arg += --build-arg CUDA_VERSION="12.1.1"
