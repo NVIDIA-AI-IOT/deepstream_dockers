@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,19 +19,21 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+
 ARG L4T_VERSION
 
-FROM nvcr.io/nvidia/tritonserver:23.11-py3-igpu
+FROM nvcr.io/nvidia/tritonserver:24.04-py3-igpu
 
- ADD vpi-lib-3.0.10-aarch64-l4t.deb /root
- ADD vpi-dev-3.0.10-aarch64-l4t.deb /root
+ADD vpi-lib-3.1.5-aarch64-l4t.deb /root
+ADD vpi-dev-3.1.5-aarch64-l4t.deb /root
 
 #
 # Configure nvidia public apt repo
 #
 
 RUN apt-key adv --fetch-keys https://repo.download.nvidia.com/jetson/jetson-ota-public.asc
-RUN echo "deb https://repo.download.nvidia.com/jetson/common r36.2 main" >> /etc/apt/sources.list
+RUN echo "deb https://repo.download.nvidia.com/jetson/common r36.3 main" >> /etc/apt/sources.list
+
 
 # GStreamer + deepstream devel dependencies
 RUN apt-get update && \
@@ -86,9 +88,11 @@ RUN apt-get update && \
         locales \
         libc6 \
         libcurl3-gnutls \
+        linux-libc-dev \
         libc-dev-bin  && \
 	rm -rf /var/lib/apt/lists/* && \
 	apt autoremove
+
 
 RUN mkdir -p /opt/tritonclient/ && \
     mkdir -p /tmp/temp_triton99 && \
@@ -97,8 +101,8 @@ RUN mkdir -p /opt/tritonclient/ && \
     mkdir -p /opt/half && \
     mkdir -p /tmp/half99 && \
     cd /tmp/temp_triton99 && \
-    wget https://github.com/triton-inference-server/server/releases/download/v2.40.0/tritonserver2.40.0-igpu.tar.gz -nv && \
-    tar xzf tritonserver2.40.0-igpu.tar.gz -C /opt/tritonclient/ --strip-components=2 tritonserver/clients/lib tritonserver/clients/include && \
+    wget https://github.com/triton-inference-server/server/releases/download/v2.45.0/tritonserver2.45.0-igpu.tgz -nv && \
+    tar xvf tritonserver2.45.0-igpu.tgz -C /opt/tritonclient/ --strip-components=2 tritonserver/clients/lib/ tritonserver/clients/include && \
     cd /tmp/temp_proto99 && \
     wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.4/protoc-3.19.4-linux-aarch_64.zip -nv && \
     /usr/bin/unzip /tmp/temp_proto99/protoc-3.19.4-linux-aarch_64.zip -d /opt/proto && \
@@ -116,10 +120,10 @@ RUN mkdir -p /lib/firmware
 
 RUN apt-get update && \
        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       /root/vpi-dev-3.0.10-aarch64-l4t.deb \
-       /root/vpi-lib-3.0.10-aarch64-l4t.deb && \
+       /root/vpi-dev-3.1.5-aarch64-l4t.deb \
+       /root/vpi-lib-3.1.5-aarch64-l4t.deb && \
        rm -rf /var/lib/apt/lists/* && \
-       rm -f /root/vpi-dev-3.0.10-aarch64-l4t.deb /root/vpi-lib-3.0.10-aarch64-l4t.deb && \
+       rm -f /root/vpi-dev-3.1.5-aarch64-l4t.deb /root/vpi-lib-3.1.5-aarch64-l4t.deb && \
        apt autoremove
 
 # patch igpu triton jetson base docker cuda 12.2 directory from jetpack
@@ -127,10 +131,10 @@ RUN apt-get update && \
 
 RUN mv /usr/local/cuda-12.2/lib64/libnvjpeg.so  /usr/local/cuda-12.2/lib64/libnvjpeg.so.bak
 
-
 # rsyslog into /etc/init.d/ (service can run)
 ADD deps/rsyslog  /etc/init.d/
 RUN chmod +x /etc/init.d/rsyslog
+
 
 # workaround for directory rename from tegra to nvidia (symlink for jetson triton base docker)
 RUN ln -s /usr/lib/aarch64-linux-gnu/nvidia /usr/lib/aarch64-linux-gnu/tegra
@@ -151,6 +155,7 @@ RUN rm -f /usr/lib/aarch64-linux-gnu/libmpg123.so* /usr/lib/aarch64-linux-gnu/li
      /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstopenh264.so /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvcodec.so
 
 
+
 CMD ["/bin/bash"]
 WORKDIR /opt/nvidia/deepstream/deepstream
 
@@ -160,6 +165,8 @@ ADD user_deepstream_python_apps_install.sh /opt/
 
 # workaround for TRT missing symlinks
 RUN ln -s /usr/src/tensorrt/bin/trtexec /usr/bin/trtexec
+
+
 
 RUN ldconfig
 

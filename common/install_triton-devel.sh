@@ -1,6 +1,5 @@
 #!/bin/bash
-#
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -77,6 +76,26 @@ utils_install_libmosquitto_from_source()
     echo "finished installing libmosquitto"
 }
 
+utils_install_glib_from_source()
+{
+    echo "Installing Dependencies: "
+    apt-get install -y python3 python3-pip python3-setuptools python3-wheel ninja-build
+    pip3 install meson 
+
+    echo "Installing glib 2.76.6: "
+    cd "/root/tmp"
+    git clone https://github.com/GNOME/glib.git
+    cd glib
+    git checkout 2.76.6
+    meson build --prefix=/usr
+    ninja -C build/
+    cd build/
+    ninja install
+    cd "/root/tmp"
+    rm -rf glib
+    echo "finished installing glib"
+}
+
 
 
 #Throws an error and causes a build failure for all errors in the script
@@ -95,6 +114,8 @@ tar -xvf "${DS_REL_PKG}" -C /
 utils_install_libhiredis_from_source
 
 utils_install_libmosquitto_from_source
+
+utils_install_glib_from_source
 
 cp /root/tmp/LicenseAgreementContainer.pdf /opt/nvidia/deepstream/deepstream/
 

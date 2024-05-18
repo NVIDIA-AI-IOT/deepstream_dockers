@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,7 +21,7 @@
 
 # Example script to build x86 docker (currently building a x86 triton docker).
 
-sudo image_url=deepstream:6.4.0-triton-local \
-     ds_pkg=deepstream_sdk_v6.4.0_x86_64.tbz2 \
-     ds_pkg_dir=deepstream_sdk_v6.4.0_x86_64/ \
+sudo image_url=deepstream:7.0.0-triton-local \
+     ds_pkg=deepstream_sdk_v7.0.0_x86_64.tbz2 \
+     ds_pkg_dir=deepstream_sdk_v7.0.0_x86_64/ \
      base_image=dgpu-any-custom-base-image make -f Makefile_x86_triton triton-devel -C x86_64/

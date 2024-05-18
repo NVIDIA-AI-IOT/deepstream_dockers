@@ -1,6 +1,5 @@
 #!/bin/bash
-#
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -20,9 +19,6 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-
-
-#
 
 utils_install_librdkafka_from_source()
 {
@@ -82,6 +78,26 @@ utils_install_libmosquitto_from_source()
 
 }
 
+utils_install_glib_from_source()
+{
+    echo "Installing Dependencies: "
+    apt-get install -y python3 python3-pip python3-setuptools python3-wheel ninja-build
+    pip3 install meson
+
+    echo "Installing glib 2.76.6: "
+    cd "/root/tmp"
+    git clone https://github.com/GNOME/glib.git
+    cd glib
+    git checkout 2.76.6
+    meson build --prefix=/usr
+    ninja -C build/
+    cd build/
+    ninja install
+    cd "/root/tmp"
+    rm -rf glib
+    echo "finished installing glib"
+}
+
 
 #Throws an error and causes a build failure for all errors in the script
 #Custom Message describes where the error was thrown
@@ -100,6 +116,8 @@ tar -xvf "${DS_REL_PKG}" -C /
 utils_install_libhiredis_from_source
 
 utils_install_libmosquitto_from_source
+
+utils_install_glib_from_source
 
 # License and IP
 mv /opt/user_additional_install_devel.sh /opt/nvidia/deepstream/deepstream/user_additional_install.sh

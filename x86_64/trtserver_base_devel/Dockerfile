@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-FROM nvcr.io/nvidia/tritonserver:23.08-py3
+FROM nvcr.io/nvidia/tritonserver:24.04-py3
 
 ARG TENSORRT_VERSION
 ARG CUDNN_VERSION
@@ -29,8 +29,6 @@ ARG BOOST_VERSION=1.71.0
 
 # Removing unnecessary nvidia entries in sources.list
 RUN head -n -2 /etc/apt/sources.list > /tmp/tmp.txt && mv /tmp/tmp.txt /etc/apt/sources.list
-
-
 
 # install realsense sdk for 3d camera
 # instructions: https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
@@ -49,6 +47,8 @@ RUN head -n -2 /etc/apt/sources.list > /tmp/tmp.txt && mv /tmp/tmp.txt /etc/apt/
         tzdata \
         libyaml-cpp-dev \
         gnutls-bin
+
+
 
  RUN apt-get update && \
         DEBIAN_FRONTEND=noninteractive  apt-get install -y --no-install-recommends \
@@ -112,6 +112,7 @@ RUN head -n -2 /etc/apt/sources.list > /tmp/tmp.txt && mv /tmp/tmp.txt /etc/apt/
         libc-bin \
         libpmi2-0 \
         libcurl4 \
+        linux-libc-dev \
         curl && \
         rm -rf /var/lib/apt/lists/* && \
         apt autoremove
@@ -122,18 +123,41 @@ RUN pip3 install --upgrade pip
 # config file
 ADD deps/ofed-ucx.conf /root
 
+# update CUDNN to 8.9.6
+# NOTE This should already be downloaded into x86_64 directory
+ADD cudnn-local-repo-ubuntu2204-8.9.6.50_1.0-1_amd64.deb /tmp
 
-# Mellanox OFED libraries: 5.7+
+ RUN mkdir -p /tmp/temp_trt && \
+       cd /tmp/temp_trt && \
+       ls -l /tmp/temp_trt/ && \
+       mv /tmp/cudnn-local-repo-ubuntu2204-8.9.6.50_1.0-1_amd64.deb  /tmp/temp_trt/ && \
+       ls -l /tmp/temp_trt/ && \
+       dpkg -i ./cudnn-local-repo-ubuntu2204-8.9.6.50_1.0-1_amd64.deb && \
+       cp /var/cudnn-local-repo-ubuntu2204-8.9.6.50/cudnn-local-1998375D-keyring.gpg /usr/share/keyrings/ && \
+       apt-get update && \
+       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       libcudnn8-dev=8.9.6.50-1+cuda12.2 \
+       libcudnn8=8.9.6.50-1+cuda12.2 && \
+       cd /tmp && \
+       dpkg --purge cudnn-local-repo-ubuntu2204-8.9.6.50 && \
+       rm -rf temp_trt && \
+       rm -rf /var/lib/apt/lists/*
+
+# config file
+ADD deps/ofed-ucx.conf /root
+
+
+# Mellanox OFED libraries: 23.10+
   RUN mkdir /opt/dev_ucx && \
-          wget -O /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu22.04-x86_64.tgz https://content.mellanox.com/ofed/MLNX_OFED-5.7-1.0.2.0/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu22.04-x86_64.tgz --no-check-certificate --no-verbose  && \
-        mv /root/ofed-ucx.conf /opt/dev_ucx/ && \
+          wget -O /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64.tgz https://content.mellanox.com/ofed/MLNX_OFED-23.10-1.1.9.0/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64.tgz --no-check-certificate --no-verbose  && \
+       wget -O /opt/dev_ucx/ofed-ucx.conf  https://urm.nvidia.com/artifactory/sw-ds-generic/depend/ucx/ofed-ucx.conf --no-check-certificate --no-verbose  && \
         cd  /opt/dev_ucx && \
-        tar --no-same-owner -xf MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu22.04-x86_64.tgz && \
-        cp /opt/dev_ucx/ofed-ucx.conf /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu22.04-x86_64/ && \
-        cd  /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu22.04-x86_64 && \
-        ls -l /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu22.04-x86_64  && \
-        chmod +x /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu22.04-x86_64/mlnxofedinstall && \
-        /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu22.04-x86_64/mlnxofedinstall --config /opt/dev_ucx/MLNX_OFED_LINUX-5.7-1.0.2.0-ubuntu22.04-x86_64/ofed-ucx.conf --without-fw-update -q --force
+        tar --no-same-owner -xf  MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64.tgz && \
+        cp /opt/dev_ucx/ofed-ucx.conf /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64/ && \
+        cd  /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64 && \
+        ls -l /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64  && \
+        chmod +x /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64/mlnxofedinstall && \
+        /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64/mlnxofedinstall --config /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64/ofed-ucx.conf --without-fw-update -q --force
 
 # rsyslog into /etc/init.d/ (service can run)
 ADD deps/rsyslog  /etc/init.d/
@@ -158,8 +182,8 @@ RUN mkdir -p /opt/tritonclient/ && \
     mkdir -p /opt/half && \
     mkdir -p /tmp/half99 && \
     cd /tmp/temp_triton99 && \
-    wget https://github.com/triton-inference-server/server/releases/download/v2.37.0/v2.37.0_ubuntu2204.clients.tar.gz -nv && \
-    tar xzf v2.37.0_ubuntu2204.clients.tar.gz -C /opt/tritonclient/ lib include && \
+    wget https://github.com/triton-inference-server/server/releases/download/v2.45.0/v2.45.0_ubuntu2204.clients.tar.gz -nv && \
+    tar xzf v2.45.0_ubuntu2204.clients.tar.gz -C /opt/tritonclient/ lib include && \
     cd /tmp/temp_proto99 && \
     wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.4/protoc-3.19.4-linux-x86_64.zip -nv && \
     /usr/bin/unzip /tmp/temp_proto99/protoc-3.19.4-linux-x86_64.zip -d /opt/proto && \
@@ -177,6 +201,7 @@ COPY trtserver_base_devel/10_nvidia.json /usr/share/glvnd/egl_vendor.d/10_nvidia
 COPY trtserver_base_devel/entrypoint.sh ${DS_DIR}/
 
 
+# ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,graphics
 ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,compute,graphics,utility
 
 ENV LD_LIBRARY_PATH /opt/tritonserver/lib:/usr/src/tensorrt/lib:/opt/riva/lib:/usr/local/cuda-12/lib64:$LD_LIBRARY_PATH
@@ -192,11 +217,12 @@ RUN ln -s /usr/src/tensorrt/bin/trtexec /usr/bin/trtexec
 RUN ln -s /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so && \
  ln -s /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-ml.so
 
+
 ADD deps/gRPC_installation.sh /root/
 RUN /root/gRPC_installation.sh
 
-ENV PATH="${PATH}:${HOME}/.local/bin"
-ENV LD_LIBARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
+ENV PATH="/opt/proto/bin:${PATH}:${HOME}/.local/bin"
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
 ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:${HOME}/.local/lib/pkgconfig"
 
 
@@ -218,7 +244,6 @@ RUN rm -f /usr/lib/x86_64-linux-gnu/libmpeg2.so* /usr/lib/x86_64-linux-gnu/libmp
 
 ADD user_additional_install_devel.sh /opt/
 ADD user_deepstream_python_apps_install.sh /opt/
-
 
 RUN rm -f /root/gRPC_installation.sh /root/*deb && \
     rm -rf /opt/dev_ucx /opt/dev_ucx2 && \
