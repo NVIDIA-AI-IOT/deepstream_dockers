@@ -22,7 +22,7 @@
 
 ARG L4T_VERSION
 
-FROM nvcr.io/nvidia/tritonserver:24.04-py3-igpu
+FROM nvcr.io/nvidia/tritonserver:24.03-py3-igpu
 
 ADD vpi-lib-3.1.5-aarch64-l4t.deb /root
 ADD vpi-dev-3.1.5-aarch64-l4t.deb /root
@@ -101,8 +101,8 @@ RUN mkdir -p /opt/tritonclient/ && \
     mkdir -p /opt/half && \
     mkdir -p /tmp/half99 && \
     cd /tmp/temp_triton99 && \
-    wget https://github.com/triton-inference-server/server/releases/download/v2.45.0/tritonserver2.45.0-igpu.tgz -nv && \
-    tar xvf tritonserver2.45.0-igpu.tgz -C /opt/tritonclient/ --strip-components=2 tritonserver/clients/lib/ tritonserver/clients/include && \
+    wget https://github.com/triton-inference-server/server/releases/download/v2.44.0/tritonserver2.44.0-igpu.tgz -nv && \
+    tar xvf tritonserver2.44.0-igpu.tgz -C /opt/tritonclient/ --strip-components=2 tritonserver/clients/lib/ tritonserver/clients/include && \
     cd /tmp/temp_proto99 && \
     wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.4/protoc-3.19.4-linux-aarch_64.zip -nv && \
     /usr/bin/unzip /tmp/temp_proto99/protoc-3.19.4-linux-aarch_64.zip -d /opt/proto && \
