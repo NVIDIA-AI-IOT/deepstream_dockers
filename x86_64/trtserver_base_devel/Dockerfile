@@ -19,7 +19,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-FROM nvcr.io/nvidia/tritonserver:24.04-py3
+FROM nvcr.io/nvidia/tritonserver:23.10-py3
 
 ARG TENSORRT_VERSION
 ARG CUDNN_VERSION
@@ -182,8 +182,8 @@ RUN mkdir -p /opt/tritonclient/ && \
     mkdir -p /opt/half && \
     mkdir -p /tmp/half99 && \
     cd /tmp/temp_triton99 && \
-    wget https://github.com/triton-inference-server/server/releases/download/v2.45.0/v2.45.0_ubuntu2204.clients.tar.gz -nv && \
-    tar xzf v2.45.0_ubuntu2204.clients.tar.gz -C /opt/tritonclient/ lib include && \
+    wget https://github.com/triton-inference-server/server/releases/download/v2.39.0/v2.39.0_ubuntu2204.clients.tar.gz -nv && \
+    tar xzf v2.39.0_ubuntu2204.clients.tar.gz -C /opt/tritonclient/ lib include && \
     cd /tmp/temp_proto99 && \
     wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.4/protoc-3.19.4-linux-x86_64.zip -nv && \
     /usr/bin/unzip /tmp/temp_proto99/protoc-3.19.4-linux-x86_64.zip -d /opt/proto && \
