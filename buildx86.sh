@@ -19,9 +19,16 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# Example script to build x86 docker (currently building a x86 triton docker).
+# Example script to build x86 docker (currently building the x86 triton docker).
 
-sudo image_url=deepstream:7.0.0-triton-local \
-     ds_pkg=deepstream_sdk_v7.0.0_x86_64.tbz2 \
-     ds_pkg_dir=deepstream_sdk_v7.0.0_x86_64/ \
-     base_image=dgpu-any-custom-base-image make -f Makefile_x86_triton triton-devel -C x86_64/
+cd docker
+
+# build x86 triton
+
+sudo docker build --network host --progress=plain --build-arg DS_DIR=/opt/nvidia/deepstream/deepstream-7.1 -t deepstream:7.1.0-triton-local -f Dockerfile_triton_x86 ..
+
+# x86-samples
+
+# sudo docker build --network host --progress=plain -t deepstream:7.1.0-samples-local -f Dockerfile ..
+
+cd ..

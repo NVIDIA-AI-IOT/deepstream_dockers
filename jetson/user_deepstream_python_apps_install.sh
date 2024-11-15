@@ -20,6 +20,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+
 # User script to download and install PyDS from https://github.com/NVIDIA-AI-IOT/deepstream_python_apps
 # -v option can be used to specify which version of PyDS to download and install
 # -b option can be used to indicate that latest available bindings should be downloaded and installed
@@ -54,13 +55,12 @@ echo "####################################"
 echo "Downloading necessary pre-requisites"
 echo "####################################"
 apt-get update
-apt-get install -y gstreamer1.0-libav
-apt-get install --reinstall -y gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly  libswresample-dev libavutil-dev libavutil56 libavcodec-dev libavcodec58 libavformat-dev libavformat58 libavfilter7 libde265-dev libde265-0 libx265-199 libx264-163 libvpx7 libmpeg2encpp-2.1-0 libmpeg2-4 libmpg123-0
-# cache cleanup
-echo "Deleting GStreamer cache"
-rm -rf ~/.cache/gstreamer-1.0/
+
 apt install -y python3-gi python3-dev python3-gst-1.0 python-gi-dev git meson python3 python3-pip python3.10-dev cmake g++ build-essential libglib2.0-dev libglib2.0-dev-bin libgstreamer1.0-dev libtool m4 autoconf automake libgirepository1.0-dev libcairo2-dev
+
+pip3 install build
 pip3 install cuda-python
+
 cd /opt/nvidia/deepstream/deepstream/sources
 if [ -z "$remote_branch" ]
 then
@@ -83,8 +83,9 @@ then
     echo "############################"
     echo "Building downloaded bindings"
     echo "############################"
-    cd /opt/nvidia/deepstream/deepstream/sources/deepstream_python_apps
+    cd /opt/nvidia/deepstream/deepstream/sources/deepstream_python_apps/bindings
     git submodule update --init
+    python3 3rdparty/git-partial-submodule/git-partial-submodule.py restore-sparse
     apt-get install -y apt-transport-https ca-certificates -y
     update-ca-certificates
     cd 3rdparty/gstreamer/subprojects/gst-python/
@@ -95,9 +96,9 @@ then
     ninja
     ninja install
     cd /opt/nvidia/deepstream/deepstream/sources/deepstream_python_apps/bindings
-    rm -rf build && mkdir build && cd build
-    cmake ..  -DPYTHON_MAJOR_VERSION=3 -DPYTHON_MINOR_VERSION=10 -DPIP_PLATFORM=linux_aarch64 -DDS_PATH=/opt/nvidia/deepstream/deepstream
-    make -j$(nproc)
+    export CMAKE_BUILD_PARALLEL_LEVEL=$(nproc)
+    python3 -m build
+    cd dist/
     echo "###########################"
     echo "Installing built PyDS wheel"
     echo "###########################"
@@ -108,14 +109,14 @@ then
     echo "Pulling PyDS version: $version"
     echo "##############################"
     cd /opt/nvidia/deepstream/deepstream/sources/deepstream_python_apps
-    URL="https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download/v$version/pyds-$version-py3-none-linux_aarch64.whl"
+    URL="https://github.com/NVIDIA-AI-IOT/deepstream_python_apps/releases/download/v$version/pyds-$version-cp310-cp310-linux_aarch64.whl"
     echo "url"
     echo $URL
     wget "$URL"
-    if [ -f "pyds-$version-py3-none-linux_aarch64.whl" ]
+    if [ -f "pyds-$version-cp310-cp310-linux_aarch64.whl" ]
     then
         echo "########################################################"
-        echo "Downloaded wheel pyds-$version-py3-none-linux_aarch64.whl"
+        echo "Downloaded wheel pyds-$version-cp310-cp310-linux_aarch64.whl"
         echo "########################################################"
     else
         echo "#########################################"
@@ -126,5 +127,5 @@ then
     echo "#####################"
     echo "Installing PyDS wheel"
     echo "#####################"
-    pip3 install pyds-$version-py3-none-linux_aarch64.whl
+    pip3 install pyds-$version-cp310-cp310-linux_aarch64.whl
 fi
