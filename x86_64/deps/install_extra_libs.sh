@@ -1,4 +1,4 @@
-#!/bin/bash
+#
 # SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
@@ -20,13 +20,13 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+# extra libs for x86 runtime
 
 utils_install_librdkafka_from_source()
 {
     # @{ librdkafka from source;
-    apt install -y  libssl-dev openssl libssl3
-
     echo "Installing librdkafka: "
+    apt install -y --no-install-recommends  libssl-dev openssl libssl3 
 
     cd "/root/tmp"
     git clone https://github.com/confluentinc/librdkafka.git
@@ -41,16 +41,15 @@ utils_install_librdkafka_from_source()
     echo "finished installing librdkafka:"
     # @} librdkafka from source;
 
-
 }
-
 
 utils_install_libhiredis_from_source()
 {
     echo "Installing Dependencies for libhiredis: "
-    apt-get install -y libglib2.0 libglib2.0-dev make libssl-dev
+    apt-get install -y --no-install-recommends libglib2.0 libglib2.0-dev make libssl-dev
 
     echo "Installing libhiredis: "
+
     cd "/root/tmp"
     git clone https://github.com/redis/hiredis.git
     cd hiredis
@@ -61,14 +60,15 @@ utils_install_libhiredis_from_source()
     ldconfig
     cd "/root/tmp"
     # apt-get purge -y libssl-dev
+
     echo "finished installing libhiredis"
 
 }
 
 utils_install_libmosquitto_from_source()
-{ 
+{
     echo "Installing Dependencies: "
-    apt-get install -y libcjson-dev libssl-dev
+    apt-get install -y --no-install-recommends libcjson-dev libssl-dev
 
     echo "Installing libmosquitto: "
     cd "/root/tmp"
@@ -84,11 +84,12 @@ utils_install_libmosquitto_from_source()
 }
 
 
+# This is for x86 only
 utils_install_glib_from_source()
 {
     echo "Installing Dependencies: "
     apt update
-    apt-get install -y python3 python3-pip python3-setuptools python3-wheel ninja-build
+    apt-get install -y --no-install-recommends python3 python3-pip python3-setuptools python3-wheel ninja-build
     pip3 install meson
 
     echo "Installing glib 2.76.6: "
@@ -96,7 +97,8 @@ utils_install_glib_from_source()
     git clone https://github.com/GNOME/glib.git
     cd glib
     git checkout 2.76.6
-    meson build --prefix=/usr
+    # meson build --prefix=/usr
+    meson setup build --prefix=/usr
     ninja -C build/
     cd build/
     ninja install
@@ -105,26 +107,7 @@ utils_install_glib_from_source()
     echo "finished installing glib"
 }
 
-
-
-#Throws an error and causes a build failure for all errors in the script
-#Custom Message describes where the error was thrown
-set -o errtrace
-trap "echo CUSTOM MESSAGE: ERROR occured in this file: $BASH_SOURCE}" ERR
-set -o errexit
-
-
-cd "/root/tmp"
-
-tar -xvf "${DS_REL_PKG}" -C /
-
-pushd "/opt/nvidia/deepstream/deepstream"
-rm -rf samples sources bin
-popd
-
 utils_install_librdkafka_from_source
-
-/opt/nvidia/deepstream/deepstream/install.sh
 
 utils_install_libhiredis_from_source
 
@@ -132,14 +115,3 @@ utils_install_libmosquitto_from_source
 
 utils_install_glib_from_source
 
-uname -a
-
-apt update
-apt-get install git
-git --version
-
-echo  "${PLATFORM}"
-
-# License and IP
-mv /opt/user_additional_install_runtime.sh /opt/nvidia/deepstream/deepstream//user_additional_install.sh
-cp /root/tmp/LicenseAgreementContainer.pdf /opt/nvidia/deepstream/deepstream/

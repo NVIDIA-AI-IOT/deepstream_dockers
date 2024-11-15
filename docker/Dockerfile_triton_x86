@@ -19,12 +19,11 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-FROM nvcr.io/nvidia/tritonserver:23.10-py3
+FROM nvcr.io/nvidia/tritonserver:24.08-py3
 
-ARG TENSORRT_VERSION
-ARG CUDNN_VERSION
+ARG DS_PUBLIC_X86
+ARG DS_PUBLIC_X86_SDK_FILE
 ARG DS_DIR
-ARG BOOST_VERSION=1.71.0
 
 
 # Removing unnecessary nvidia entries in sources.list
@@ -32,7 +31,8 @@ RUN head -n -2 /etc/apt/sources.list > /tmp/tmp.txt && mv /tmp/tmp.txt /etc/apt/
 
 # install realsense sdk for 3d camera
 # instructions: https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
- RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE && \
+#
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-key F6E65AC044F831AC80A06380C8B3A55A6F3EFCDE && \
         apt-get update && DEBIAN_FRONTEND=noninteractive  apt-get install -y software-properties-common && \
         add-apt-repository "deb https://librealsense.intel.com/Debian/apt-repo $(lsb_release -cs) main" -u &&  apt-get update && \
         DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -40,17 +40,25 @@ RUN head -n -2 /etc/apt/sources.list > /tmp/tmp.txt && mv /tmp/tmp.txt /etc/apt/
         rm -rf /var/lib/apt/lists/* && \
         apt autoremove
 
- RUN apt-get update && \
-        DEBIAN_FRONTEND=noninteractive  apt-get install -y \
+# IP requirement for removal
+# gstreamer1.0-libav
+
+RUN apt-get update && \
+        DEBIAN_FRONTEND=noninteractive  apt-get install -y --no-install-recommends \
         wget \
         libxml2 \
         tzdata \
         libyaml-cpp-dev \
-        gnutls-bin
+        gnutls-bin && \
+        rm -rf /var/lib/apt/lists/* && \
+        apt autoremove
+
+# add this manually
+# wget -O /tmp99/libgstrtpmanager.so https://<host name>/x86/libgstrtpmanager.so && \
 
 
-
- RUN apt-get update && \
+RUN --mount=type=bind,src=docker,target=/tmp/docker \
+        mkdir -p /tmp99 ;  apt-get update && \
         DEBIAN_FRONTEND=noninteractive  apt-get install -y --no-install-recommends \
         linux-libc-dev \
         libglew2.2 libssl3 libjpeg8 libjson-glib-1.0-0 \
@@ -112,67 +120,46 @@ RUN head -n -2 /etc/apt/sources.list > /tmp/tmp.txt && mv /tmp/tmp.txt /etc/apt/
         libc-bin \
         libpmi2-0 \
         libcurl4 \
-        linux-libc-dev \
         curl && \
+        tar --version ; tar -xvf /tmp/docker/deepstream_sdk_v7.1.0_x86_64.tbz2 -C / ;  /opt/nvidia/deepstream/deepstream/install.sh && \
+        /tmp/docker/install_extra_libs.sh && \
+        /tmp/docker/gRPC_installation.sh && \
+        cp /tmp/docker/LicenseAgreementContainer.pdf /opt/nvidia/deepstream/deepstream/ && \
+        cp  /tmp/docker/user_additional_install_devel.sh /opt/nvidia/deepstream/deepstream/user_additional_install.sh && \
+        cp  /tmp/docker/user_deepstream_python_apps_install.sh /opt/nvidia/deepstream/deepstream/user_deepstream_python_apps_install.sh && \
+        cp /tmp/docker/rsyslog  /etc/init.d/ && \
+        chmod +x /etc/init.d/rsyslog && \
+        cp /tmp/docker/10_nvidia.json /usr/share/glvnd/egl_vendor.d/10_nvidia.jsoa && \
+        cp /tmp/docker/entrypoint.sh /opt/nvidia/deepstream/deepstream/ && \
         rm -rf /var/lib/apt/lists/* && \
         apt autoremove
 
  
 RUN pip3 install --upgrade pip
 
-# config file
-ADD deps/ofed-ucx.conf /root
 
-# update CUDNN to 8.9.6
-# NOTE This should already be downloaded into x86_64 directory
-ADD cudnn-local-repo-ubuntu2204-8.9.6.50_1.0-1_amd64.deb /tmp
-
- RUN mkdir -p /tmp/temp_trt && \
-       cd /tmp/temp_trt && \
-       ls -l /tmp/temp_trt/ && \
-       mv /tmp/cudnn-local-repo-ubuntu2204-8.9.6.50_1.0-1_amd64.deb  /tmp/temp_trt/ && \
-       ls -l /tmp/temp_trt/ && \
-       dpkg -i ./cudnn-local-repo-ubuntu2204-8.9.6.50_1.0-1_amd64.deb && \
-       cp /var/cudnn-local-repo-ubuntu2204-8.9.6.50/cudnn-local-1998375D-keyring.gpg /usr/share/keyrings/ && \
-       apt-get update && \
-       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       libcudnn8-dev=8.9.6.50-1+cuda12.2 \
-       libcudnn8=8.9.6.50-1+cuda12.2 && \
-       cd /tmp && \
-       dpkg --purge cudnn-local-repo-ubuntu2204-8.9.6.50 && \
-       rm -rf temp_trt && \
-       rm -rf /var/lib/apt/lists/*
-
-# config file
-ADD deps/ofed-ucx.conf /root
-
-
-# Mellanox OFED libraries: 23.10+
-  RUN mkdir /opt/dev_ucx && \
-          wget -O /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64.tgz https://content.mellanox.com/ofed/MLNX_OFED-23.10-1.1.9.0/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64.tgz --no-check-certificate --no-verbose  && \
-       wget -O /opt/dev_ucx/ofed-ucx.conf  https://urm.nvidia.com/artifactory/sw-ds-generic/depend/ucx/ofed-ucx.conf --no-check-certificate --no-verbose  && \
+# Mellanox OFED libraries: 24.07
+RUN mkdir -p /opt/dev_ucx && \
+          wget -O /opt/dev_ucx/MLNX_OFED_LINUX-24.07-0.6.1.0-ubuntu22.04-x86_64.tgz https://content.mellanox.com/ofed/MLNX_OFED-24.07-0.6.1.0/MLNX_OFED_LINUX-24.07-0.6.1.0-ubuntu22.04-x86_64.tgz --no-check-certificate --no-verbose  && \
+        cp /tmp/docker/ofed-ucx.conf /opt/dev_ucx/ofed-ucx.conf && \
         cd  /opt/dev_ucx && \
-        tar --no-same-owner -xf  MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64.tgz && \
-        cp /opt/dev_ucx/ofed-ucx.conf /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64/ && \
-        cd  /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64 && \
-        ls -l /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64  && \
-        chmod +x /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64/mlnxofedinstall && \
-        /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64/mlnxofedinstall --config /opt/dev_ucx/MLNX_OFED_LINUX-23.10-1.1.9.0-ubuntu22.04-x86_64/ofed-ucx.conf --without-fw-update -q --force
+        chmod +r /opt/dev_ucx/ofed-ucx.conf && \
+        tar --no-same-owner -xf MLNX_OFED_LINUX-24.07-0.6.1.0-ubuntu22.04-x86_64.tgz && \
+        cp /opt/dev_ucx/ofed-ucx.conf /opt/dev_ucx/MLNX_OFED_LINUX-24.07-0.6.1.0-ubuntu22.04-x86_64/ && \
+        cd  /opt/dev_ucx/MLNX_OFED_LINUX-24.07-0.6.1.0-ubuntu22.04-x86_64 && \
+        ls -l /opt/dev_ucx/MLNX_OFED_LINUX-24.07-0.6.1.0-ubuntu22.04-x86_64  && \
+        chmod +x /opt/dev_ucx/MLNX_OFED_LINUX-24.07-0.6.1.0-ubuntu22.04-x86_64/mlnxofedinstall && \
+        /opt/dev_ucx/MLNX_OFED_LINUX-24.07-0.6.1.0-ubuntu22.04-x86_64/mlnxofedinstall --config /opt/dev_ucx/MLNX_OFED_LINUX-24.07-0.6.1.0-ubuntu22.04-x86_64/ofed-ucx.conf --without-fw-update -q --force ; rm -rf /opt/dev_ucx
 
-# rsyslog into /etc/init.d/ (service can run)
-ADD deps/rsyslog  /etc/init.d/
-RUN chmod +x /etc/init.d/rsyslog
+# UCX 1.17.0
 
-# UCX 1.15.0
-
-  RUN mkdir /opt/dev_ucx2 && \
-         wget -O /opt/dev_ucx2/ucx-1.15.0.tar.gz  https://github.com/openucx/ucx/releases/download/v1.15.0/ucx-1.15.0.tar.gz --no-verbose  && \
+RUN mkdir /opt/dev_ucx2 && \
+        wget -O /opt/dev_ucx2/ucx-1.17.0.tar.gz https://github.com/openucx/ucx/releases/download/v1.17.0/ucx-1.17.0.tar.gz  --no-verbose  && \
         cd  /opt/dev_ucx2 && \
-        tar -xf ucx-1.15.0.tar.gz && \
-        cd /opt/dev_ucx2/ucx-1.15.0 && \
-        /opt/dev_ucx2/ucx-1.15.0/contrib/configure-release-mt --prefix=/usr --enable-examples --with-java=no --with-cuda=/usr/local/cuda && \
-        make install
-
+        tar -xf ucx-1.17.0.tar.gz && \
+        cd /opt/dev_ucx2/ucx-1.17.0 && \
+        /opt/dev_ucx2/ucx-1.17.0/contrib/configure-release-mt --prefix=/usr --enable-examples --with-java=no --with-cuda=/usr/local/cuda && \
+        make install ; rm -rf /opt/dev_ucx2
 
 
 RUN mkdir -p /opt/tritonclient/ && \
@@ -182,11 +169,11 @@ RUN mkdir -p /opt/tritonclient/ && \
     mkdir -p /opt/half && \
     mkdir -p /tmp/half99 && \
     cd /tmp/temp_triton99 && \
-    wget https://github.com/triton-inference-server/server/releases/download/v2.39.0/v2.39.0_ubuntu2204.clients.tar.gz -nv && \
-    tar xzf v2.39.0_ubuntu2204.clients.tar.gz -C /opt/tritonclient/ lib include && \
+    wget https://github.com/triton-inference-server/server/releases/download/v2.49.0/v2.49.0_ubuntu2204.clients.tar.gz -nv && \
+    tar xzf v2.49.0_ubuntu2204.clients.tar.gz -C /opt/tritonclient/ lib include && \
     cd /tmp/temp_proto99 && \
-    wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.4/protoc-3.19.4-linux-x86_64.zip -nv && \
-    /usr/bin/unzip /tmp/temp_proto99/protoc-3.19.4-linux-x86_64.zip -d /opt/proto && \
+    wget https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protoc-21.12-linux-x86_64.zip -nv && \
+    /usr/bin/unzip /tmp/temp_proto99/protoc-21.12-linux-x86_64.zip -d /opt/proto && \
     cd /tmp/half99 && \
     wget https://sourceforge.net/projects/half/files/half/2.1.0/half-2.1.0.zip -nv && \
     /usr/bin/unzip /tmp/half99/half-2.1.0.zip -d /opt/half && \
@@ -196,30 +183,18 @@ RUN mkdir -p /opt/tritonclient/ && \
     rm -rf /tmp/half99
 
 
-
-COPY trtserver_base_devel/10_nvidia.json /usr/share/glvnd/egl_vendor.d/10_nvidia.json
-COPY trtserver_base_devel/entrypoint.sh ${DS_DIR}/
-
-
-# ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,graphics
 ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,compute,graphics,utility
 
 ENV LD_LIBRARY_PATH /opt/tritonserver/lib:/usr/src/tensorrt/lib:/opt/riva/lib:/usr/local/cuda-12/lib64:$LD_LIBRARY_PATH
 
-ENTRYPOINT ["${DS_DIR}/entrypoint.sh"]
+ENTRYPOINT ["/opt/nvidia/deepstream/deepstream-7.1/entrypoint.sh"]
 
 WORKDIR ${DS_DIR}
 
-# add symlink
-RUN ln -s /usr/src/tensorrt/bin/trtexec /usr/bin/trtexec
-
 
 RUN ln -s /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so && \
- ln -s /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-ml.so
-
-
-ADD deps/gRPC_installation.sh /root/
-RUN /root/gRPC_installation.sh
+ ln -s /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-ml.so && \
+ ln -s /usr/src/tensorrt/bin/trtexec /usr/bin/trtexec
 
 ENV PATH="/opt/proto/bin:${PATH}:${HOME}/.local/bin"
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
@@ -240,11 +215,16 @@ RUN rm -f /usr/lib/x86_64-linux-gnu/libmpeg2.so* /usr/lib/x86_64-linux-gnu/libmp
     /usr/lib/x86_64-linux-gnu/libmpeg2convert.so* /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstopenh264.so \
     /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstnvcodec.so
 
-# ENV LD_PRELOAD /usr/lib/x86_64-linux-gnu/libgstbadvideo-1.0.so.0
+# new IP removal
 
-ADD user_additional_install_devel.sh /opt/
-ADD user_deepstream_python_apps_install.sh /opt/
+RUN rm -f /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstuvch264.so /usr/lib/x86_64-linux-gnu/libopenh264.so.2.2.0 /usr/lib/x86_64-linux-gnu/libopenh264.so.6 \
+     /usr/lib/x86_64-linux-gnu/libvo-aacenc.so.0 /usr/lib/x86_64-linux-gnu/libvo-aacenc.so.0.0.4 /usr/lib/x86_64-linux-gnu/libmp3lame.so.0.0.0 \
+     /usr/lib/x86_64-linux-gnu/libmp3lame.so.0 /usr/lib/x86_64-linux-gnu/libfaad* /usr/lib/x86_64-linux-gnu/libFLAC.so* \
+     /usr/lib/x86_64-linux-gnu/libmjpegutils-2.1.so.0* /usr/lib/x86_64-linux-gnu/libxvidcore.so* /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpegpsmux.so \
+/usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstflac.so \
+     /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2enc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2dec.so
 
-RUN rm -f /root/gRPC_installation.sh /root/*deb && \
-    rm -rf /opt/dev_ucx /opt/dev_ucx2 && \
-    rm -rf  /opt/tritonserver/backends/dali 
+RUN rm -f /usr/lib/x86_64-linux-gnu/mfx/libmfx_h264la_hw64.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstflac.so \
+/usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2enc.so  /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2dec.so
+
+RUN rm -rf  /opt/tritonserver/backends/dali 

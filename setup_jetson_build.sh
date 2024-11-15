@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
@@ -21,4 +20,12 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-# cp /root/tmp/LicenseAgreement.pdf /opt/nvidia/deepstream/deepstream/
+# jetson build setup
+
+cp ./x86_64/deps/install_extra_libs.sh ./docker/
+cp ./x86_64/deps/rsyslog ./docker/
+cp ./jetson/user_additional_install_runtime.sh ./docker/
+cp ./jetson/user_additional_install_devel.sh ./docker/
+cp ./jetson/user_deepstream_python_apps_install.sh ./docker/
+cp ./common/files/* ./docker/
+

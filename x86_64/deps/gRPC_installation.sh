@@ -1,6 +1,6 @@
 #!/bin/bash
 ################################################################################
-# SPDX-FileCopyrightText: Copyright (c) 2021-2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,7 +23,7 @@
 ################################################################################
 
 # Script for gRPC C++ Installation
-# Installs gRPC C++ v1.48.0
+# Installs gRPC C++ v1.54.3
 # Based on steps provided at: https://grpc.io/docs/languages/cpp/quickstart/
 # Two changes with respect to steps in the above link:
 # 1. Add -DBUILD_SHARED_LIBS=ON to build shared libraries
@@ -54,8 +54,8 @@ export PATH="$MY_INSTALL_DIR/bin:$PATH"
 
 pushd $DOWNLOAD_DIR
 
-$CMD_PREFIX DEBIAN_FRONTEND=noninteractive apt update
-$CMD_PREFIX DEBIAN_FRONTEND=noninteractive apt install -y git wget cmake curl
+$CMD_PREFIX bash -c "DEBIAN_FRONTEND=noninteractive apt update"
+$CMD_PREFIX bash -c "DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends git wget cmake curl"
 if [[ $(uname -m) == "aarch64" ]]; then
     wget -q -O cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.19.6/cmake-3.19.6-Linux-aarch64.sh
 else
@@ -63,8 +63,8 @@ else
 fi
 sh cmake-linux.sh -- --skip-license --prefix=$MY_INSTALL_DIR
 rm cmake-linux.sh
-$CMD_PREFIX DEBIAN_FRONTEND=noninteractive apt install -y build-essential autoconf libtool pkg-config
-git clone --recurse-submodules -b v1.48.0 https://github.com/grpc/grpc
+$CMD_PREFIX bash -c "DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends build-essential autoconf libtool pkg-config"
+git clone --recurse-submodules -b v1.54.3 --depth 1 --shallow-submodules https://github.com/grpc/grpc
 
 cd grpc
 mkdir -p cmake/build
@@ -86,3 +86,4 @@ rm -rf $DOWNLOAD_DIR/grpc
 echo "export PATH="$MY_INSTALL_DIR"/bin:\$PATH" >> $HOME/.profile
 echo "export LD_LIBRARY_PATH="$MY_INSTALL_DIR"/lib:\$LD_LIBRARY_PATH" >> $HOME/.profile
 echo "export PKG_CONFIG_PATH="$MY_INSTALL_DIR"/lib/pkgconfig:\$PKG_CONFIG_PATH" >> $HOME/.profile
+
