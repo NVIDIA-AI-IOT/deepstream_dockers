@@ -104,7 +104,7 @@ then
     echo "###########################"
     echo "Installing built PyDS wheel"
     echo "###########################"
-    if [ $platform == "aarch64" ]
+    if [[ $platform == "aarch64" ]]
     then
         pip3 install ./pyds-1*_aarch64.whl
     else

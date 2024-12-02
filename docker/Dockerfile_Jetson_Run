@@ -55,6 +55,7 @@ RUN mkdir -p /lib/firmware ; mkdir -p /root/tmp ; mkdir -p /tmp99 ; ls -ltr /roo
         libnvvpi3 \
         vpi3-dev && \
         rm -rf /var/lib/apt/lists/* && \
+        rm -rf /root/tmp && \
         apt autoremove
 
 # add this manually
@@ -62,7 +63,7 @@ RUN mkdir -p /lib/firmware ; mkdir -p /root/tmp ; mkdir -p /tmp99 ; ls -ltr /roo
 
 
 RUN --mount=type=bind,src=docker,target=/tmp/docker \
-    tar --version ; ls -ltr /root ; tar -xvf /tmp/docker/deepstream_sdk_v7.1.0_jetson.tbz2 -C / ; /opt/nvidia/deepstream/deepstream/install.sh && \
+    tar --version ; mkdir -p /root/tmp ; ls -ltr /root ; tar -xvf /tmp/docker/deepstream_sdk_v7.1.0_jetson.tbz2 -C / ; /opt/nvidia/deepstream/deepstream/install.sh && \
         cp /tmp/docker/rsyslog /etc/init.d/rsyslog  && \
         chmod +x /etc/init.d/rsyslog && \
          /tmp/docker/install_extra_libs.sh && \

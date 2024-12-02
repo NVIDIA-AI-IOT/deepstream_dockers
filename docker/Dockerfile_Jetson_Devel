@@ -99,6 +99,7 @@ RUN --mount=type=bind,src=docker,target=/tmp/docker \
         cp /tmp/docker/LicenseAgreementContainer.pdf /opt/nvidia/deepstream/deepstream/ && \
         mv  /opt/nvidia/deepstream/deepstream/user_additional_install_devel.sh /opt/nvidia/deepstream/deepstream/user_additional_install.sh && \
         rm -rf /var/lib/apt/lists/* && \
+        rm -rf /root/tmp && \
         apt autoremove
 
 
