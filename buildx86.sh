@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,14 +21,14 @@
 
 # Example script to build x86 docker (currently building the x86 triton docker).
 
-cd docker
+cd x86_dockerfiles
 
 # build x86 triton
 
-sudo docker build --network host --progress=plain --build-arg DS_DIR=/opt/nvidia/deepstream/deepstream-7.1 -t deepstream:7.1.0-triton-local -f Dockerfile_triton_x86 ..
+sudo docker build --network host --progress=plain --build-arg DS_DIR=/opt/nvidia/deepstream/deepstream-8.0 -t deepstream:8.0.0-triton-local -f Dockerfile_triton_x86 ..
 
 # x86-samples
 
-# sudo docker build --network host --progress=plain -t deepstream:7.1.0-samples-local -f Dockerfile ..
+# sudo docker build --network host --progress=plain -t deepstream:8.0.0-samples-local -f Dockerfile_samples_x86 ..
 
 cd ..

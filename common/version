@@ -1,4 +1,0 @@
-version=7.1.0
-tag=gmc1
-registry ?= nvcr.io/nvidia
-image_tag=$(version)-$(tag)
