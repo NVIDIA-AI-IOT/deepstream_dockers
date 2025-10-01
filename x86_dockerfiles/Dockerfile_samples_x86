@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,22 +19,23 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+
 ARG BASE_IMAGE
 
-# FROM ${BASE_IMAGE}
-FROM nvcr.io/nvidia/cuda:12.6.0-runtime-ubuntu22.04
+ 
+FROM nvcr.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04
 
 ARG DS_PUBLIC_X86
 ARG DS_PUBLIC_X86_SDK_FILE
-ARG TENSORRT_VERSION=10.3.0.26-1+cuda12.5
-# ARG CUDNN_VERSION
+ARG TENSORRT_VERSION=10.9.0.34-1+cuda12.8
+
 
 # Add open GL libraries and other required components. Added new gstreamer components and additional components including CVE patches
 # IP removal is included here
-
 RUN apt-get update && \
-        DEBIAN_FRONTEND=noninteractive  apt-get install -y --no-install-recommends \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         pkg-config \
+        software-properties-common \
         libglvnd-dev \
         libgl1-mesa-dev \
         libegl1-mesa-dev \
@@ -42,6 +43,7 @@ RUN apt-get update && \
         libegl-mesa0 \
         libglib2.0-dev \
         libcjson-dev \
+        libglib2.0-0t64 \
         libssl-dev \
         wget \
         libyaml-cpp-dev \
@@ -56,7 +58,7 @@ RUN apt-get update && \
         gstreamer1.0-alsa \
         libssl3  \
         libgstreamer1.0-0 \
-        libgstrtspserver-1.0-0 \
+        libgstrtspserver-1.0 \
         libjansson4 \
         librabbitmq4 \
         libuuid1 \
@@ -67,7 +69,20 @@ RUN apt-get update && \
         gstreamer1.0-rtsp \
         rsyslog \
         git \
+        sudo \
+        openssh-server \
+        openssh-sftp-server \
+        openssh-client \
+        libbinutils \
+        binutils \
+        gpgv \
+        libsqlite3-0 \
+        libpam0g \
+        libtasn1-6 \
         python3 \
+        libssh-4 \
+        libjq1 \
+        jq \
         libjsoncpp-dev \
         gcc \
         g++ \
@@ -77,55 +92,55 @@ RUN apt-get update && \
         libjpeg-dev \
         libxml2 \
         zlib1g \
+        apparmor-utils \
+        libhiredis-dev \
+        librdkafka1 \
         tzdata && \
         rm -f /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstaudioparsers.so \
         /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstfaad.so \
-    /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstvoaacenc.so \
-    /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstx264.so && \
-    rm -f /usr/lib/x86_64-linux-gnu/libavresample* /usr/lib/x86_64-linux-gnu/libavutil* \
-     /usr/lib/x86_64-linux-gnu/libavcodec* /usr/lib/x86_64-linux-gnu/libavformat* \
-     /usr/lib/x86_64-linux-gnu/libavfilter* /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstde265.so* \
-    /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstx265.so* /usr/lib/x86_64-linux-gnu/libde265.so* && \
-     rm -f /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstvpx.so* \
-    /usr/lib/x86_64-linux-gnu/libmpeg2.so.0* /usr/lib/x86_64-linux-gnu/libmpeg2encpp-2.1.so* /usr/lib/x86_64-linux-gnu/libmpg123.so* \
-    /usr/lib/x86_64-linux-gnu/libx265.so* /usr/lib/x86_64-linux-gnu/libx264.so* /usr/lib/x86_64-linux-gnu/libvpx.so*   \
-    /usr/lib/x86_64-linux-gnu/libmpeg2convert.so* /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstopenh264.so \
-    /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstnvcodec.so \
-    /usr/lib/x86_64-linux-gnu/libopenh264.so* /usr/lib/x86_64-linux-gnu/libvo-aacenc.so* && \
-   rm -f /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstuvch264.so /usr/lib/x86_64-linux-gnu/libopenh264.so.2.2.0 /usr/lib/x86_64-linux-gnu/libopenh264.so.6 \
-     /usr/lib/x86_64-linux-gnu/libvo-aacenc.so.0 /usr/lib/x86_64-linux-gnu/libvo-aacenc.so.0.0.4 /usr/lib/x86_64-linux-gnu/libmp3lame.so.0.0.0 \
-     /usr/lib/x86_64-linux-gnu/libmp3lame.so.0 /usr/lib/x86_64-linux-gnu/libfaad* /usr/lib/x86_64-linux-gnu/libFLAC.so* \
-     /usr/lib/x86_64-linux-gnu/libmjpegutils-2.1.so.0* /usr/lib/x86_64-linux-gnu/libxvidcore.so* /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpegpsmux.so \
-/usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstflac.so \
-     /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2enc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2dec.so && \
-     rm -f /usr/lib/x86_64-linux-gnu/mfx/libmfx_h264la_hw64.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstflac.so \
-/usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2enc.so  /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2dec.so && \
+        /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstvoaacenc.so \
+        /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstx264.so && \
+        rm -f /usr/lib/x86_64-linux-gnu/libavresample* /usr/lib/x86_64-linux-gnu/libavutil* \
+        /usr/lib/x86_64-linux-gnu/libavcodec* /usr/lib/x86_64-linux-gnu/libavformat* \
+        /usr/lib/x86_64-linux-gnu/libavfilter* /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstde265.so* \
+        /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstx265.so* /usr/lib/x86_64-linux-gnu/libde265.so* && \
+        rm -f /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstvpx.so* \
+        /usr/lib/x86_64-linux-gnu/libmpeg2.so.0* /usr/lib/x86_64-linux-gnu/libmpeg2encpp-2.1.so* /usr/lib/x86_64-linux-gnu/libmpg123.so* \
+        /usr/lib/x86_64-linux-gnu/libx265.so* /usr/lib/x86_64-linux-gnu/libx264.so* /usr/lib/x86_64-linux-gnu/libvpx.so*   \
+        /usr/lib/x86_64-linux-gnu/libmpeg2convert.so* /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstopenh264.so \
+        /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstnvcodec.so \
+        /usr/lib/x86_64-linux-gnu/libopenh264.so* /usr/lib/x86_64-linux-gnu/libvo-aacenc.so* && \
+        rm -f /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstuvch264.so /usr/lib/x86_64-linux-gnu/libopenh264.so.2.2.0 /usr/lib/x86_64-linux-gnu/libopenh264.so.6 \
+        /usr/lib/x86_64-linux-gnu/libvo-aacenc.so.0 /usr/lib/x86_64-linux-gnu/libvo-aacenc.so.0.0.4 /usr/lib/x86_64-linux-gnu/libmp3lame.so.0.0.0 \
+        /usr/lib/x86_64-linux-gnu/libmp3lame.so.0 /usr/lib/x86_64-linux-gnu/libfaad* /usr/lib/x86_64-linux-gnu/libFLAC.so* \
+        /usr/lib/x86_64-linux-gnu/libmjpegutils-2.1.so.0* /usr/lib/x86_64-linux-gnu/libxvidcore.so* /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpegpsmux.so \
+        /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstflac.so \
+        /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2enc.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2dec.so && \
+        rm -f /usr/lib/x86_64-linux-gnu/mfx/libmfx_h264la_hw64.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstflac.so \
+        /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2enc.so  /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2dec.so && \
+        rm -f /usr/lib/x86_64-linux-gnu/libopenh264.so.7 /usr/lib/x86_64-linux-gnu/libopenh264.so.2.4.1 && \
+        rm -f /usr/lib/*-linux-gnu/libdca.so* /usr/lib/*-linux-gnu/libdvdnav.so* /usr/lib/*-linux-gnu/libdvdread.so* \
+          /usr/lib/*-linux-gnu/libmpeg2.so.0* /usr/lib/*-linux-gnu/libmpeg2encpp-2.1.so* /usr/lib/*-linux-gnu/libmpg123.so* && \
         rm -rf /var/lib/apt/lists/* && \
         apt autoremove
 
-# IP requirement for removal
-#  Remove  gstreamer1.0-libav \
 
-# add this manually
-# wget -O /tmp99/libgstrtpmanager.so https://<host name>/x86/libgstrtpmanager.so && \
 
- RUN --mount=type=bind,src=docker,target=/tmp/docker \
+ RUN --mount=type=bind,src=x86_dockerfiles,target=/tmp/docker \
        mkdir -p /tmp/temp_trt ; mkdir -p /root/tmp ; mkdir -p /tmp99 && \
        cd /tmp/temp_trt && \
-        ls -l /tmp/docker/ && \
+       apt-add-repository ppa:mosquitto-dev/mosquitto-ppa && \
        cp /tmp/docker/rsyslog /etc/init.d/ && \
        ls -l /tmp/temp_trt/ && \
-       cp /tmp/docker/nv-tensorrt-local-repo-ubuntu2204-10.3.0-cuda-12.5_1.0-1_amd64.deb /tmp/temp_trt && \
-       cp  /tmp/docker/cudnn-local-repo-ubuntu2204-9.3.0_1.0-1_amd64.deb  /tmp/temp_trt && \
-       ls -l /tmp/temp_trt/ && \
-       dpkg -i /tmp/temp_trt/nv-tensorrt-local-repo-ubuntu2204-10.3.0-cuda-12.5_1.0-1_amd64.deb && \
-       dpkg -i /tmp/temp_trt/cudnn-local-repo-ubuntu2204-9.3.0_1.0-1_amd64.deb && \
-       ls -l /tmp/temp_trt/ && \
        chmod +x /etc/init.d/rsyslog && \
-       cp /var/nv-tensorrt-local-repo-ubuntu2204-10.3.0-cuda-12.5/nv-tensorrt-local-620E7D29-keyring.gpg /usr/share/keyrings/ && \
-       cp /var/cudnn-local-repo-ubuntu2204-9.3.0/cudnn-*-keyring.gpg /usr/share/keyrings/ && \
+       dpkg -i /tmp/docker/nv-tensorrt-local-repo-ubuntu2404-10.9.0-cuda-12.8_1.0-1_amd64.deb && \
+       dpkg -i /tmp/docker/cudnn-local-repo-ubuntu2404-9.8.0_1.0-1_amd64.deb && \
+       ls -l /tmp/temp_trt/ && \
+       cp /var/nv-tensorrt-local-repo-ubuntu2404-10.9.0-cuda-12.8/nv-tensorrt-local-53871640-keyring.gpg /usr/share/keyrings/ && \
+       cp /var/cudnn-local-repo-ubuntu2404-9.8.0/cudnn-*-keyring.gpg /usr/share/keyrings/ && \
        apt-get update && \
        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       mosquitto \
        libnvinfer-bin=${TENSORRT_VERSION} \
        libnvinfer-dev=${TENSORRT_VERSION} \
        libnvinfer-dispatch-dev=${TENSORRT_VERSION} \
@@ -143,9 +158,8 @@ RUN apt-get update && \
        libnvonnxparsers-dev=${TENSORRT_VERSION} \
        libnvonnxparsers10=${TENSORRT_VERSION} \
        tensorrt-dev=${TENSORRT_VERSION} \
-       libcudnn9-cuda-12=9.3.0.75-1 && \
-       tar --version ; tar -xvf /tmp/docker/deepstream_sdk_v7.1.0_x86_64.tbz2 -C / ;  /opt/nvidia/deepstream/deepstream/install.sh && \
-       /tmp/docker/install_extra_libs.sh && \
+       libcudnn9-cuda-12=9.8.0.87-1 && \
+       tar --version ; tar -xvf /tmp/docker/deepstream_sdk_v8.0.0_x86_64.tbz2 -C / ;  /opt/nvidia/deepstream/deepstream/install.sh && \
        /tmp/docker/gRPC_installation.sh && \
        cp /tmp/docker/user_additional_install_runtime.sh /opt/nvidia/deepstream/deepstream/ && \
        cp /tmp/docker/LicenseAgreementContainer.pdf /opt/nvidia/deepstream/deepstream/ && \
@@ -155,24 +169,27 @@ RUN apt-get update && \
        ln -s /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so && \
        ln -s /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-ml.so && \
        cd /tmp && \
-       dpkg --purge nv-tensorrt-local-repo-ubuntu2204-10.3.0-cuda-12.5 && \
-       dpkg --purge cudnn-local-repo-ubuntu2204-9.3.0 && \
+       dpkg --purge nv-tensorrt-local-repo-ubuntu2404-10.9.0-cuda-12.8 && \
+       dpkg --purge cudnn-local-repo-ubuntu2404-9.7.1 && \
        rm -rf /root/tmp && \
        rm -rf temp_trt && \
        rm -rf /var/lib/apt/lists/* && \
        apt autoremove ; ldconfig
 
+# workaround deepstream-app --version-all for cudnn
+RUN ln -s /usr/lib/x86_64-linux-gnu/libcudnn.so.9 /usr/lib/x86_64-linux-gnu/libcudnn.so
 
-ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,compute,graphics,utility
+# ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video
+ENV NVIDIA_DRIVER_CAPABILITIES=$NVIDIA_DRIVER_CAPABILITIES,video,compute,graphics,utility
 
 WORKDIR /opt/nvidia/deepstream/deepstream
+
 
 ENV PATH="${PATH}:${HOME}/.local/bin"
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
 ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:${HOME}/.local/lib/pkgconfig"
 
+ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libGLdispatch.so:$LD_PRELOAD
 
-# RUN ldconfig
-
-# NOTE: IP removal was moved earlier in the dockerfile.
+RUN ldconfig
 

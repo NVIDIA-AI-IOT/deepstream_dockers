@@ -1,13 +1,15 @@
-# DeepStream 7.1 Open Source Dockerfiles Guide
+# DeepStream 8.0 Open Source Dockerfiles Guide
 
 The documentation here is intended to help customers build the Open Source DeepStream Dockerfiles.
 
-This information is useful for both x86 systems with dGPU setup and NVIDIA Jetson devices.
+This information is useful for both x86 systems with dGPU setup and NVIDIA Jetson Thor only devices.
 
 Improvements from previous releases.   
-(A) Building Jetson dockers on x86 Linux PCs (cross-compile on x86)  
-(B) Consolidation of Dockerfiles into a single docker directory  
+(A) Building Jetson Thor dockers on x86 Linux PCs (cross-compile on x86).  
+(B) Dockerfiles into different directories based on platform (Jetson or x86).  
 (C) Build setup files to put all of the files in correct location for the various build x86 and x86 crosss-compile (for Jetson).  
+
+NOTE: Jetson Thor support only. Also x86 uses CUDA 12.8 and Jetson Thor uses Cuda 13.
 
 
 ## 1 Additional Installation to use all DeepStreamSDK Features within the docker container.
@@ -22,7 +24,7 @@ Please run the below script inside the docker images to install additional packa
 
 ## 1.1 Triton samples additional libraries required.
 
-For Triton samples, while running /opt/nvidia/deepstream/deepstream-7.1/samples/prepare_classification_test_video.sh, FFMPEG package along with additional dependent libs need to be installed using command below. For additional information please refer to section 1.4 (for codecs: DIFFERENCES WITH  DEEPSTREAM 6.1 AND ABOVE) & section 1.5  for BREAKING CHANGES in Release notes.
+For Triton samples, while running /opt/nvidia/deepstream/deepstream-8.0/samples/prepare_classification_test_video.sh, FFMPEG package along with additional dependent libs need to be installed using command below. For additional information please refer to section 1.4 (for codecs: DIFFERENCES WITH  DEEPSTREAM 6.1 AND ABOVE) & section 1.5  for BREAKING CHANGES in Release notes.
 
 
 ```
@@ -32,9 +34,9 @@ apt-get install --reinstall libflac8 libmp3lame0 libxvidcore4 ffmpeg
 
 ## 1.2 Prebuilt libgstrtpmanager.so found in the NGC dockers.
 
-The file is found in the DS 7.1 dockers found on NGC.
+The file is found in the DS 8.0 dockers found on NGC.
 
-To include that in these local builds you will need to download it from the DS 7.1 NGC dockers. On both Jetson and x86_64 dockers it is found in the following location.
+To include that in these local builds you will need to download it from the DS 8.0 NGC dockers. On both Jetson and x86_64 dockers it is found in the following location.
 /tmp99/libgstrtpmanager.so.
 
 This will need to be added to open the Dockerfiles if you wish to include it.
@@ -43,13 +45,13 @@ Alternatively you can use the ``/opt/nvidia/deepstream/deepstream/update_rtpmana
 
 So when users run ``/opt/nvidia/deepstream/deepstream/user_additional_install.sh`` script (on the docker) libgstrtpmanager.so will be copied to the correct location.
 
-## 1.3 Jetson Dockers (adding to the released DS 7.1 NGC Jetson dockers)
+## 1.3 Jetson Dockers (adding to the released DS 8.0 NGC Jetson dockers)
 
-For the Jetson NGC dockers you will need to add the following lines if you are making modifications to those prebuilt NGC DS 7.1 Jetson dockers.
+For the Jetson NGC dockers you will need to add the following lines if you are making modifications to those prebuilt NGC DS 8.0 Jetson dockers.
 
 ```
 RUN apt-key adv --fetch-keys https://repo.download.nvidia.com/jetson/jetson-ota-public.asc   
-RUN echo "deb https://repo.download.nvidia.com/jetson/common r36.4 main" >> /etc/apt/sources.list      
+RUN echo "deb https://repo.download.nvidia.com/jetson/common r38.2 main" >> /etc/apt/sources.list      
 ```
 
 
@@ -65,40 +67,40 @@ Please refer to the Prerequisites section at DeepStream NGC page [NVIDIA NGC](ht
 1) Please download the [DeepStreamSDK release](https://developer.nvidia.com/deepstream-getting-started) x86 tarball and place it locally
 in the ``$ROOT/`` folder of this repository.
 
-``cp deepstream_sdk_v7.1.0_x86_64.tbz2 ./docker/``
+``cp deepstream_sdk_v8.0.0_x86_64.tbz2 ./x86_dockerfiles/``
 
 
-#### 2.1.2 CuDNN 9.3.0 install 
+#### 2.1.2 CuDNN 9.8.0 install 
 
 For x86-samples docker only
 
 #### 2.1.2.1  x86 docker pre-requisites
 
-Requires Docker version 26 or later.
+Requires Docker version 28 or later.
 
 #### 2.1.2.1.1  x86-Triton
 
 Nothing to be added other than deepstream package.
 
-#### 2.1.2.2 For x86 samples docker the TensorRT 10.3.0 and cuDNN 9.3.0 install is required for the Docker build
+#### 2.1.2.2 For x86 samples docker the TensorRT 10.9.0 and cuDNN 9.8.0 install is required for the Docker build
 
-Download file link: [nv-tensorrt-local-repo-ubuntu2204-10.3.0-cuda-12.5_1.0-1_amd64.deb](https://developer.nvidia.com/downloads/compute/machine-learning/tensorrt/10.3.0/local_repo/nv-tensorrt-local-repo-ubuntu2204-10.3.0-cuda-12.5_1.0-1_amd64.deb) from TensorRT download page.
+Download file link: [nv-tensorrt-local-repo-ubuntu2404-10.9.0-cuda-12.8_1.0-1_amd64.deb](https://developer.nvidia.com/downloads/compute/machine-learning/tensorrt/10.9.0/local_repo/nv-tensorrt-local-repo-ubuntu2404-10.9.0-cuda-12.8_1.0-1_amd64.deb) from TensorRT download page.
 Note: You may have to login to [developer.nvidia.com](https://developer.nvidia.com/) to download the file.  
 Quick Steps:  
 $ROOT is the root directory of this git repo.    
 ``cd $ROOT/``
 
-``cp  nv-tensorrt-local-repo-ubuntu2204-10.3.0-cuda-12.5_1.0-1_amd64.deb ./docker/``
+``cp nv-tensorrt-local-repo-ubuntu2404-10.9.0-cuda-12.8_1.0-1_amd64.deb ./x86_dockerfiles/``
 
 Also the CuDNN file.
 
-Download file link: [cudnn-local-repo-ubuntu2204-9.3.0_1.0-1_amd64.deb](https://developer.download.nvidia.com/compute/cudnn/9.3.0/local_installers/cudnn-local-repo-ubuntu2204-9.3.0_1.0-1_amd64.deb) from cuDNN download page.
+Download file link: [cudnn-local-repo-ubuntu2404-9.8.0_1.0-1_amd64.deb](https://developer.download.nvidia.com/compute/cudnn/9.8.0/local_installers/cudnn-local-repo-ubuntu2404-9.8.0_1.0-1_amd64.deb) from cuDNN download page.
 Note: You may have to login to [developer.nvidia.com](https://developer.nvidia.com/) to download the file.
 Quick Steps:
 $ROOT is the root directory of this git repo.
 ``cd $ROOT/``
 
-``cp cudnn-local-repo-ubuntu2204-9.3.0_1.0-1_amd64.deb ./docker/``
+``cp cudnn-local-repo-ubuntu2404-9.8.0_1.0-1_amd64.deb ./x86_dockerfiles/``
 
 #### 2.1.2.3 Important Notes on docker image size optimization
 
@@ -119,8 +121,8 @@ cd $ROOT/
 NOTE: Make sure you run the x86 Build setup command first.
 
 ```
-cd $ROOT/docker
-sudo docker build --network host --progress=plain --build-arg DS_DIR=/opt/nvidia/deepstream/deepstream-7.1 -t deepstream:7.1.0-triton-local -f Dockerfile_triton_x86 ..
+cd $ROOT/x86_dockerfiles
+sudo docker build --network host --progress=plain --build-arg DS_DIR=/opt/nvidia/deepstream/deepstream-8.0 -t deepstream:8.0.0-triton-local -f Dockerfile_triton_x86 ..
 
 ```
 NOTE: There is an example build script called $ROOT/buildx86.sh with the same contents.
@@ -130,8 +132,8 @@ NOTE: There is an example build script called $ROOT/buildx86.sh with the same co
 NOTE: Make sure you run the x86 Build setup command first.
 
 ```
-cd $ROOT/docker
-sudo docker build --network host --progress=plain -t deepstream:7.1.0-samples-local -f Dockerfile ..
+cd $ROOT/x86_dockerfiles
+sudo docker build --network host --progress=plain -t deepstream:8.0.0-samples-local -f Dockerfile_samples_x86 ..
 
 ```
 
@@ -148,11 +150,11 @@ Please refer to the Prerequisites section at DeepStream NGC page [NVIDIA NGC](ht
 Download DeepStreamSDK tarball from [DeepStreamSDK release](https://developer.nvidia.com/deepstream-getting-started) Jetson tarball and place it locally
 in the ``$ROOT/`` folder of this repository.
 
-``cp deepstream_sdk_v7.1.0_jetson.tbz2 ./docker/ ``
+``cp deepstream_sdk_v8.0.0_jetson.tbz2 ./jetson_dockerfiles/ ``
 
-## 3.1.1 Jetson requires JP 6.1 to run the dockers on Jetson
+## 3.1.1 Jetson requires JP 7.0 to run the dockers on Jetson
 
-More information found here [JetPack 6.1 GA](https://developer.nvidia.com/embedded/jetpack-sdk-61).
+More information found here [JetPack 7.0 GA](https://developer.nvidia.com/embedded/jetpack).
 
 ## 3.1.2 Jetson build setup for x86 cross compile
 
@@ -171,22 +173,26 @@ cd $ROOT/
 NOTE: Make sure you run the Jetson setup (x86 cross-compile) and Build setup command first.
 
 ```
-cd $ROOT/docker  
-sudo docker build --platform linux/arm64 --network host --progress=plain -t deepstream-l4t:7.1.0-triton-local -f Dockerfile_Jetson_Devel ..
+cd $ROOT/jetson_dockerfiles  
+sudo docker build --platform linux/arm64 --network host --progress=plain -t deepstream-l4t:8.0.0-triton-local -f Dockerfile_Jetson_Devel ..
 
 ```
+
+NOTE: There is an issue with the Jetson triton docker where for this example deepstream-infer-tensor-meta-test. The issue is related to libopencv package not being installed with libopencv-dev.  The solution is to install libopencv package directly (e.g. apt install libopencv) in addition to all of the other packages listed in the deepstream-infer-tensor-meta-test README file.
+
+
 ### 3.2.2 Instructions for building Jetson DS samples docker image
 
 NOTE: Make sure you run the Jetson setup (x86 cross-compile) and Build setup command first.
 
 ```
-cd $ROOT/docker   
-sudo docker build --platform linux/arm64 --network host --progress=plain -t deepstream-l4t:7.1.0-samples-local -f Dockerfile_Jetson_Run ..
+cd $ROOT/jetson_dockerfiles  
+sudo docker build --platform linux/arm64 --network host --progress=plain -t deepstream-l4t:8.0.0-samples-local -f Dockerfile_Jetson_Run ..
 
 ```
 ## 4 Triton Migration Guide
 
-### 4.1 Changing triton version in DS 7.1 x86+dGPU docker image
+### 4.1 Changing triton version in DS 8.0 x86+dGPU docker image
 
 Steps:
 
@@ -200,93 +206,53 @@ docker/Dockerfile_triton_x86
 
 Change the FROM command to use the desired Triton version.
 
-Current: Triton 24.08
+Current: Triton 25.03
 ```
-FROM nvcr.io/nvidia/tritonserver:24.08-py3
+FROM nvcr.io/nvidia/tritonserver:25.03-py3
 ```
 
-Example Migration to: Triton 24.09
+Example Migration to: Triton 25.04
 ```
-FROM nvcr.io/nvidia/tritonserver:24.09-py3
+FROM nvcr.io/nvidia/tritonserver:25.04-py3
 ```
 
 3. Edit the Triton client libraries URL in Dockerfile.
 
 Client libraries are available for download from [Triton Inference Server Releases page](https://github.com/triton-inference-server/server/releases).
 
-Current: Triton 24.08
+Current: Triton 25.03
 ```
-wget https://github.com/triton-inference-server/server/releases/download/v2.49.0/v2.49.0_ubuntu2204.clients.tar.gz
+wget https://github.com/triton-inference-server/server/releases/download/v2.56.0/v2.56.0_ubuntu2404.clients.tar.gz
 ```
 
-Example Migration to: Triton 24.09
+Example Migration to: Triton 25.04
 ```
-wget https://github.com/triton-inference-server/server/releases/download/v2.50.0/v2.50.0_ubuntu2204.clients.tar.gz
+wget https://github.com/triton-inference-server/server/releases/download/v2.57.0/v2.57.0_ubuntu2404.clients.tar.gz
 ```
 
 4. Build the DS x86 triton docker following instructions in section 2.2.1. [here](#221-Instructions-for-Building-x86-DS-Triton-docker-image)
 
-### 4.2 Changing triton version in DS 7.1 Jetson (iGPU) docker image
+### 4.2 Changing triton version in DS 8.0 Jetson docker image
 
-Steps:
-
-1. Open Triton Docker file:
-
-```
-docker/Dockerfile_Jetson_Devel
-```
-
-2. Edit the FROM command in Dockerfile.
-
-Change the FROM command to use the desired Triton version.
-
-Current: Triton 24.08
-
-```
-FROM nvcr.io/nvidia/tritonserver:24.08-py3-igpu
-```
-
-Example Migration to: Triton 24.09
-```
-FROM nvcr.io/nvidia/tritonserver:24.09-py3-igpu
-```
-
-3. Edit the Triton client libraries URL in Dockerfile.
-
-Client libraries are available for download from [Triton Inference Server Releases page](https://github.com/triton-inference-server/server/releases).
-
-Current: Triton 24.08
-
-```
-wget https://github.com/triton-inference-server/server/releases/download/v2.49.0/tritonserver2.49.0-igpu.tar.gz
-```
-
-Example Migration to: Triton 24.09
-```
-wget https://github.com/triton-inference-server/server/releases/download/v2.50.0/tritonserver-2.50.0-igpu.tar.gz
-```
-
-4. Build the Jetson triton docker (x86-cross compile) following instructions [here](#321-instructions-for-building-jetson-ds-triton-docker-image).
+No Jetson upgrade available.
 
 ### 4.3 API and ABI Compatibility Requirements
 
 #### 4.3.1 Tritonserver lib upgrade
 
-DeepStream 7.1 Triton Server API is based on Triton 24.08 (x86) and Triton 24.08 (Jetson) release.
+DeepStream 8.0 Triton Server API is based on Triton 25.03 (x86)
 
 Regarding API compatibility, if a customer wants to upgrade triton, they need to make sure:
 
 a) new version's `tritonserver.h` is compatible with  the:
 
-[24.08 version of tritonserver.h for x86](https://github.com/triton-inference-server/core/blob/r24.08/include/triton/core/tritonserver.h), 
-[24.08 version of tritonserver.h for jetson](https://github.com/triton-inference-server/core/blob/r24.08/include/triton/core/tritonserver.h), 
+[25.03 version of tritonserver.h for x86](https://github.com/triton-inference-server/core/blob/r25.03/include/triton/core/tritonserver.h), 
 
 and
 
 b) new version’s `model_config.proto` is compatible with:
 
-[24.08 version for x86](https://github.com/triton-inference-server/common/blob/r24.08/protobuf/model_config.proto), 
-[24.08 version for jetson](https://github.com/triton-inference-server/common/blob/r24.08/protobuf/model_config.proto), 
+[25.03 version for x86](https://github.com/triton-inference-server/common/blob/r25.03/protobuf/model_config.proto), 
 
 To build specific Tritonserver version libs, users can follow instructions at https://github.com/triton-inference-server/server/blob/master/docs/build.md.
 
@@ -294,13 +260,13 @@ To build specific Tritonserver version libs, users can follow instructions at ht
 #### 4.3.2 DeepStream Config file Requirement
 
 Gst-nvinferserver plugin’s config file kept backward compatibility.
-Triton model/backend’s config.pbtxt file must follow rules of 24.08’s ``model_config.proto`` for x86 and 24.08's ``model_config.proto`` for jetson.
+Triton model/backend’s config.pbtxt file must follow rules of 25.03’s ``model_config.proto`` for x86.
 
 ### 4.4 Ubuntu Version Requirements
 
-#### 4.4.1 Ubuntu 22.04
+#### 4.4.1 Ubuntu 24.04
 
-DeepStream 7.1 release package inherently supports Ubuntu 22.04.
+DeepStream 8.0 release package inherently supports Ubuntu 24.04.
 
 Thus, the only thing to consider is API/ABI compatibility between the new Triton version and the Triton version supported by current DS release.
-
+ 

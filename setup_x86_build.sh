@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -25,17 +25,15 @@
 # x86 build setup
 # samples and triton
 
-cp ./x86_64/trtserver_base_devel/10_nvidia.json ./docker/
-cp ./x86_64/deps/install_extra_libs.sh ./docker/
-cp ./x86_64/deps/gRPC_installation.sh ./docker/
-cp ./x86_64/user_additional_install_runtime.sh ./docker/
-cp ./x86_64/user_additional_install_devel.sh ./docker/
-cp ./x86_64/user_deepstream_python_apps_install.sh ./docker/
-cp ./common/files/* ./docker/
+cp ./x86_64_specific_files/10_nvidia.json ./x86_dockerfiles/
+cp ./x86_64_specific_files/deps/gRPC_installation.sh ./x86_dockerfiles/
+cp ./x86_64_specific_files/user_additional_install_runtime.sh ./x86_dockerfiles/
+cp ./x86_64_specific_files/user_additional_install_devel.sh ./x86_dockerfiles/
+cp ./x86_64_specific_files/user_deepstream_python_apps_install.sh ./x86_dockerfiles/
+cp ./common/files/* ./x86_dockerfiles/
 
-cp ./x86_64/deps/rsyslog ./docker/
-cp ./x86_64/deps/ofed-ucx.conf ./docker/
+cp ./x86_64_specific_files/deps/rsyslog ./x86_dockerfiles/
 
-cp ./x86_64/nvidia_icd.json ./docker/
-cp ./x86_64/trtserver_base_devel/entrypoint.sh ./docker/
+cp ./x86_64_specific_files/10_nvidia.json ./x86_dockerfiles/
+cp ./x86_64_specific_files/entrypoint.sh ./x86_dockerfiles/
 			       

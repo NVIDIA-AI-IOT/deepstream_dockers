@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,14 +21,14 @@
 
 # Example script to build Jetson triton docker on x86 Linux PC (cross compile)
 
-cd docker
+cd jetson_dockerfiles
 
 # Jetson triton
 
-sudo docker build --platform linux/arm64 --network host --progress=plain -t deepstream-l4t:7.1.0-triton-local -f Dockerfile_Jetson_Devel ..
+sudo docker build --platform linux/arm64 --network host --progress=plain -t deepstream-l4t:8.0.0-triton-local -f Dockerfile_Jetson_Devel ..
 
 # Jetson samples
 
-# sudo docker build --platform linux/arm64 --network host --progress=plain -t deepstream-l4t:7.1.0-samples-local -f Dockerfile_Jetson_Run ..
+# sudo docker build --platform linux/arm64 --network host --progress=plain -t deepstream-l4t:8.0.0-samples-local -f Dockerfile_Jetson_Run ..
 
 cd ..
