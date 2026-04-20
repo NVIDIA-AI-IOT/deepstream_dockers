@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -29,3 +29,24 @@ cp ./jetson_specific_files/user_additional_install_devel.sh ./jetson_dockerfiles
 cp ./jetson_specific_files/user_deepstream_python_apps_install.sh ./jetson_dockerfiles/
 cp ./common/files/* ./jetson_dockerfiles/
 
+# copy /tmp99 components to a specific directory and then point the environment
+
+# ADDVAR99jetson="${ADDVAR99jetson:-$(pwd -P)}"
+
+if [ -z "${ADDVAR99:-}" ]; then
+  echo "Error: ADDVAR99 is not set" >&2
+  exit 1
+fi
+
+# echo 'copying gst files'
+
+cp $ADDVAR99/jetson/gst/libgstrtpmanager.so ./jetson_dockerfiles/
+cp $ADDVAR99/jetson/gst/libgstrtsp.so ./jetson_dockerfiles/
+cp $ADDVAR99/jetson/gst/libgstvideoparsersbad.so ./jetson_dockerfiles/
+
+mkdir -p ./jetson_dockerfiles/optel
+
+# echo 'copying open tel *.deb files'
+
+
+cp $ADDVAR99/jetson/optel/* ./jetson_dockerfiles/optel/

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,16 +19,12 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+FROM nvcr.io/nvidia/cuda:13.1.0-runtime-ubuntu24.04
 
-ARG BASE_IMAGE
+ARG TENSORRT_VERSION=10.14.1.48-1+cuda13.0
 
- 
-FROM nvcr.io/nvidia/cuda:12.8.1-runtime-ubuntu24.04
 
-ARG DS_PUBLIC_X86
-ARG DS_PUBLIC_X86_SDK_FILE
-ARG TENSORRT_VERSION=10.9.0.34-1+cuda12.8
-
+ENV DS_VERSION=9.0
 
 # Add open GL libraries and other required components. Added new gstreamer components and additional components including CVE patches
 # IP removal is included here
@@ -95,6 +91,7 @@ RUN apt-get update && \
         apparmor-utils \
         libhiredis-dev \
         librdkafka1 \
+        libcups2t64 \
         tzdata && \
         rm -f /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstaudioparsers.so \
         /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstfaad.so \
@@ -120,9 +117,11 @@ RUN apt-get update && \
         /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2enc.so  /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstmpeg2dec.so && \
         rm -f /usr/lib/x86_64-linux-gnu/libopenh264.so.7 /usr/lib/x86_64-linux-gnu/libopenh264.so.2.4.1 && \
         rm -f /usr/lib/*-linux-gnu/libdca.so* /usr/lib/*-linux-gnu/libdvdnav.so* /usr/lib/*-linux-gnu/libdvdread.so* \
-          /usr/lib/*-linux-gnu/libmpeg2.so.0* /usr/lib/*-linux-gnu/libmpeg2encpp-2.1.so* /usr/lib/*-linux-gnu/libmpg123.so* && \
+          /usr/lib/*-linux-gnu/libmpeg2.so.0* /usr/lib/*-linux-gnu/libmpeg2encpp-2.1.so* /usr/lib/*-linux-gnu/libmpg123.so* \
+          /usr/lib/x86_64-linux-gnu/libjbig.so* /usr/lib/x86_64-linux-gnu/libmplex2-2.1.so* && \
         rm -rf /var/lib/apt/lists/* && \
         apt autoremove
+
 
 
 
@@ -133,11 +132,15 @@ RUN apt-get update && \
        cp /tmp/docker/rsyslog /etc/init.d/ && \
        ls -l /tmp/temp_trt/ && \
        chmod +x /etc/init.d/rsyslog && \
-       dpkg -i /tmp/docker/nv-tensorrt-local-repo-ubuntu2404-10.9.0-cuda-12.8_1.0-1_amd64.deb && \
-       dpkg -i /tmp/docker/cudnn-local-repo-ubuntu2404-9.8.0_1.0-1_amd64.deb && \
+       dpkg -i /tmp/docker/nv-tensorrt-local-repo-ubuntu2404-10.14.1-cuda-13.0_1.0-1_amd64.deb && \
+       dpkg -i /tmp/docker/cudnn-local-repo-ubuntu2404-9.17.1_1.0-1_amd64.deb && \
        ls -l /tmp/temp_trt/ && \
-       cp /var/nv-tensorrt-local-repo-ubuntu2404-10.9.0-cuda-12.8/nv-tensorrt-local-53871640-keyring.gpg /usr/share/keyrings/ && \
-       cp /var/cudnn-local-repo-ubuntu2404-9.8.0/cudnn-*-keyring.gpg /usr/share/keyrings/ && \
+       cp /tmp/docker/libgstrtpmanager.so /tmp99/libgstrtpmanager.so && \
+       cp /tmp/docker/libgstrtsp.so /tmp99/libgstrtsp.so && \
+       cp /tmp/docker/libgstvideoparsersbad.so /tmp99/libgstvideoparsersbad.so && \
+       cp /tmp/docker/rsyslog /etc/init.d/ && \
+       cp /var/nv-tensorrt-local-repo-ubuntu2404-10.14.1-cuda-13.0/nv-tensorrt-local-D12DA6BC-keyring.gpg /usr/share/keyrings/ && \
+       cp /var/cudnn-local-repo-ubuntu2404-9.17.1/cudnn-local-98EF7CF8-keyring.gpg /usr/share/keyrings/ && \
        apt-get update && \
        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        mosquitto \
@@ -147,19 +150,26 @@ RUN apt-get update && \
        libnvinfer-dispatch10=${TENSORRT_VERSION} \
        libnvinfer-headers-dev=${TENSORRT_VERSION} \
        libnvinfer-headers-plugin-dev=${TENSORRT_VERSION} \
+       libnvinfer-headers-python-plugin-dev=${TENSORRT_VERSION} \
        libnvinfer-lean-dev=${TENSORRT_VERSION} \
        libnvinfer-lean10=${TENSORRT_VERSION} \
        libnvinfer-plugin-dev=${TENSORRT_VERSION} \
        libnvinfer-plugin10=${TENSORRT_VERSION} \
-       libnvinfer-samples=${TENSORRT_VERSION} \
        libnvinfer-vc-plugin-dev=${TENSORRT_VERSION} \
        libnvinfer-vc-plugin10=${TENSORRT_VERSION} \
+       libnvinfer-win-builder-resource10=${TENSORRT_VERSION} \
        libnvinfer10=${TENSORRT_VERSION} \
        libnvonnxparsers-dev=${TENSORRT_VERSION} \
        libnvonnxparsers10=${TENSORRT_VERSION} \
+       python3-libnvinfer-dev=${TENSORRT_VERSION} \
+       python3-libnvinfer-dispatch=${TENSORRT_VERSION} \
+       python3-libnvinfer-lean=${TENSORRT_VERSION} \
+       python3-libnvinfer=${TENSORRT_VERSION} \
        tensorrt-dev=${TENSORRT_VERSION} \
-       libcudnn9-cuda-12=9.8.0.87-1 && \
-       tar --version ; tar -xvf /tmp/docker/deepstream_sdk_v8.0.0_x86_64.tbz2 -C / ;  /opt/nvidia/deepstream/deepstream/install.sh && \
+       tensorrt-libs=${TENSORRT_VERSION} \
+       tensorrt=${TENSORRT_VERSION} \
+       libcudnn9-cuda-13=9.17.1.4-1 && \
+       tar --version ; tar -xvf /tmp/docker/deepstream_sdk_v9.0.0_x86_64.tbz2 -C / ;  /opt/nvidia/deepstream/deepstream/install.sh && \
        /tmp/docker/gRPC_installation.sh && \
        cp /tmp/docker/user_additional_install_runtime.sh /opt/nvidia/deepstream/deepstream/ && \
        cp /tmp/docker/LicenseAgreementContainer.pdf /opt/nvidia/deepstream/deepstream/ && \
@@ -169,18 +179,39 @@ RUN apt-get update && \
        ln -s /usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-encode.so && \
        ln -s /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1 /usr/lib/x86_64-linux-gnu/libnvidia-ml.so && \
        cd /tmp && \
-       dpkg --purge nv-tensorrt-local-repo-ubuntu2404-10.9.0-cuda-12.8 && \
-       dpkg --purge cudnn-local-repo-ubuntu2404-9.7.1 && \
+       dpkg --purge nv-tensorrt-local-repo-ubuntu2404-10.14.1-cuda-13.0 && \
+       dpkg --purge cudnn-local-repo-ubuntu2404-9.17.1 && \
        rm -rf /root/tmp && \
        rm -rf temp_trt && \
        rm -rf /var/lib/apt/lists/* && \
        apt autoremove ; ldconfig
 
+# open telemetry 
+ RUN --mount=type=bind,src=x86_dockerfiles,target=/tmp/docker \
+     mkdir -p /tmp/temp_otel99 && \
+     cd /tmp/temp_otel99 && \
+     cp  /tmp/docker/optel/* . && \
+     dpkg -i *.deb && \
+     cd / && \
+     rm -rf /tmp/temp_otel99
+
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --reinstall -y --allow-downgrades libprotobuf32t64=3.21.12-8.2ubuntu0.3 libprotoc32t64=3.21.12-8.2ubuntu0.3 && \
+    apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev=3.21.12-8.2ubuntu0.3 && \
+    mkdir -p /opt/proto/bin && \
+    ln -sf /usr/bin/protoc /opt/proto/bin/protoc && \
+    rm -rf /var/lib/apt/lists/*
+
+
 # workaround deepstream-app --version-all for cudnn
 RUN ln -s /usr/lib/x86_64-linux-gnu/libcudnn.so.9 /usr/lib/x86_64-linux-gnu/libcudnn.so
 
+# workaround for deepstream --version-all cuda driver
+RUN ln -s  /usr/local/cuda/lib64/libcudart.so.13  /usr/local/cuda/lib64/libcudart.so
+
 # ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video
-ENV NVIDIA_DRIVER_CAPABILITIES=$NVIDIA_DRIVER_CAPABILITIES,video,compute,graphics,utility
+ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,compute,graphics,utility
 
 WORKDIR /opt/nvidia/deepstream/deepstream
 
@@ -189,7 +220,7 @@ ENV PATH="${PATH}:${HOME}/.local/bin"
 ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${HOME}/.local/lib"
 ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:${HOME}/.local/lib/pkgconfig"
 
-ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libGLdispatch.so:$LD_PRELOAD
+ENV LD_PRELOAD /usr/lib/x86_64-linux-gnu/libgomp.so.1:/usr/lib/x86_64-linux-gnu/libGLdispatch.so:$LD_PRELOAD
 
 RUN ldconfig
 
