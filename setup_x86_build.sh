@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -36,4 +36,26 @@ cp ./x86_64_specific_files/deps/rsyslog ./x86_dockerfiles/
 
 cp ./x86_64_specific_files/10_nvidia.json ./x86_dockerfiles/
 cp ./x86_64_specific_files/entrypoint.sh ./x86_dockerfiles/
-			       
+
+# copy /tmp99 components to a specific directory and then point the environment
+
+# ADDVAR99x86="${ADDVAR99x86:-$(pwd -P)}"
+
+if [ -z "${ADDVAR99:-}" ]; then
+  echo "Error: ADDVAR99 is not set" >&2
+  exit 1
+fi
+
+# echo 'copying gst files ...'
+
+cp $ADDVAR99/x86/gst/libgstrtpmanager.so ./x86_dockerfiles/
+cp $ADDVAR99/x86/gst/libgstrtsp.so ./x86_dockerfiles/
+cp $ADDVAR99/x86/gst/libgstvideoparsersbad.so ./x86_dockerfiles/
+
+mkdir -p ./x86_dockerfiles/optel
+
+# echo 'copying open tel *.deb files'
+
+cp $ADDVAR99/x86/optel/* ./x86_dockerfiles/optel/
+
+

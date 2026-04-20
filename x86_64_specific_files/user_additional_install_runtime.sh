@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -28,10 +28,13 @@ apt-get install --reinstall -y gstreamer1.0-plugins-good gstreamer1.0-plugins-ba
 # new since DS 7.1
 apt-get install --reinstall -y libflac12t64 libmp3lame0 libxvidcore4 ffmpeg libfaad2 mjpegtools libvo-aacenc0 libdca0 libdvdnav4 libdvdread8t64
 # new for dev-main 8.0 ubuntu 24.04
-apt-get install --reinstall -y libvpx9 libavfilter-dev libflac++10 libmjpegutils-2.1-0t64 libopenh264-7 libx264-164 
+# apt-get install --reinstall -y libvpx9 libavfilter-dev libflac++10 libmjpegutils-2.1-0t64 libopenh264-7 libx264-164 
+apt-get install --reinstall -y libvpx9 libavfilter-dev libflac++10 libmjpegutils-2.1-0t64 libopenh264-7 libx264-164 libjbig0 libmplex2-2.1-0t64
 
 
 # gstreamer1.0-plugins-good fix
 cp /tmp99/libgstrtpmanager.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrtpmanager.so
+cp /tmp99/libgstrtsp.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstrtsp.so
+cp /tmp99/libgstvideoparsersbad.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/libgstvideoparsersbad.so
 echo "Deleting GStreamer cache"
 rm -rf ~/.cache/gstreamer-1.0/

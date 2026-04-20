@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: MIT
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -27,13 +27,15 @@ ARG L4T_VERSION
 
 FROM nvcr.io/nvidia/cuda:13.0.0-tensorrt-runtime-ubuntu24.04
 
+ENV DS_VERSION=9.0
+
+
 RUN apt-key adv --fetch-keys https://repo.download.nvidia.com/jetson/jetson-ota-public.asc
-RUN echo "deb https://repo.download.nvidia.com/jetson/common r38.2 main" >> /etc/apt/sources.list
 
-# needed to add apt-repo
-RUN DEBIAN_FRONTEND=noninteractive apt-get update ;  apt-get install -y --no-install-recommends software-properties-common
+RUN echo "deb https://repo.download.nvidia.com/jetson/common r38.4 main" >> /etc/apt/sources.list
 
 
+# GStreamer + deepstream dependencies
 RUN mkdir -p /lib/firmware ; mkdir -p /root/tmp ; mkdir -p /tmp99 ; ls -ltr /root ;  \
         apt-add-repository ppa:mosquitto-dev/mosquitto-ppa ; apt-get update && \
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -60,21 +62,50 @@ RUN mkdir -p /lib/firmware ; mkdir -p /root/tmp ; mkdir -p /tmp99 ; ls -ltr /roo
         libssl-dev \
         libcurl4-openssl-dev \
         libcjson-dev \
-        libnvvpi4 \
-        vpi4-dev \
         apparmor-utils \
+        libprotoc32t64 \
+        libprotobuf32t64 \
         mosquitto \
         libhiredis-dev \
-        librdkafka1 \ 
+        librdkafka1 \
+        gnupg2 \ 
         ca-certificates && \
         rm -rf /var/lib/apt/lists/* && \
         rm -rf /root/tmp && \       
         apt autoremove
 
+RUN mkdir -p /root/tmp ; cd /root/tmp ; \
+        apt-get update && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        libnvvpi4 \
+        vpi4-dev && \
+        rm -rf /root/tmp 
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libopencv && \
+    ldconfig
+
+# open telemetry 
+ RUN --mount=type=bind,src=jetson_dockerfiles,target=/tmp/docker \
+     mkdir -p /tmp/temp_otel99 && \
+     cd /tmp/temp_otel99 && \
+     cp  /tmp/docker/optel/* . && \
+     dpkg -i *.deb && \
+     cd / && \
+     rm -rf /tmp/temp_otel99
+
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --reinstall -y --allow-downgrades libprotobuf32t64=3.21.12-8.2ubuntu0.3 libprotoc32t64=3.21.12-8.2ubuntu0.3
+
+
 RUN --mount=type=bind,src=jetson_dockerfiles,target=/tmp/docker \
-        tar --version ; mkdir -p /root/tmp ; mkdir -p /tmp99 ; ls -ltr /root ; tar -xvf /tmp/docker/deepstream_sdk_v8.0.0_jetson.tbz2 -C / ; /opt/nvidia/deepstream/deepstream/install.sh && \
+        tar --version ; mkdir -p /root/tmp ; mkdir -p /tmp99 ; ls -ltr /root ; tar -xvf /tmp/docker/deepstream_sdk_v9.0.0_jetson.tbz2 -C / ; /opt/nvidia/deepstream/deepstream/install.sh && \
         cp /tmp/docker/rsyslog /etc/init.d/  && \
         chmod +x /etc/init.d/rsyslog && \
+        cp /tmp/docker/libgstrtpmanager.so /tmp99/libgstrtpmanager.so && \
+        cp /tmp/docker/libgstrtsp.so /tmp99/libgstrtsp.so && \
+        cp /tmp/docker/libgstvideoparsersbad.so /tmp99/libgstvideoparsersbad.so && \
         ln -s /usr/lib/aarch64-linux-gnu/nvidia /usr/lib/aarch64-linux-gnu/tegra && \
         ln -s /usr/src/tensorrt/bin/trtexec /usr/bin/trtexec && \
         cp /tmp/docker/entrypoint.sh /opt/nvidia/deepstream/deepstream/ && \
@@ -89,7 +120,6 @@ RUN --mount=type=bind,src=jetson_dockerfiles,target=/tmp/docker \
 # WAR for CUDA compatability so DeepStream will run without errors with JP 7.0 / JP 7.1 - 580.xx drivers
 RUN apt purge -y cuda-compat-13-0
 
-
 # IP requirement for removal
 RUN rm -f /usr/lib/aarch64-linux-gnu/libavresample* /usr/lib/aarch64-linux-gnu/libavutil* \
         /usr/lib/aarch64-linux-gnu/libavcodec* /usr/lib/aarch64-linux-gnu/libavformat* \
@@ -102,7 +132,8 @@ RUN rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvoaacenc.so \
 RUN rm -f  /usr/lib/aarch64-linux-gnu/libmpg123.so* /usr/lib/aarch64-linux-gnu/libvpx.so* /usr/lib/aarch64-linux-gnu/libx265.so*  \
         /usr/lib/aarch64-linux-gnu/libde265.so* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstx265.so*  \
         /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstde265.so* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvpx.so \
-        /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstopenh264.so /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvcodec.so
+        /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstopenh264.so /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvcodec.so \
+        /usr/lib/aarch64-linux-gnu/libjbig.so* /usr/lib/aarch64-linux-gnu/libmplex2-2.1.so*
 
 # new IP additions
 
@@ -113,6 +144,7 @@ RUN rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstuvch264.so /usr/lib/aar
         /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstflac.so \
         /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstmpeg2enc.so /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstmpeg2dec.so
 
+# remove for DS 8.0 VSS
 RUN rm -f /usr/lib/*-linux-gnu/libdca.so* /usr/lib/*-linux-gnu/libdvdnav.so* /usr/lib/*-linux-gnu/libdvdread.so* \
           /usr/lib/*-linux-gnu/libmpeg2.so.0* /usr/lib/*-linux-gnu/libmpeg2encpp-2.1.so* /usr/lib/*-linux-gnu/libmpg123.so*
 
